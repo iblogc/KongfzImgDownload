@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         孔夫子旧书网图片下载
 // @description  孔夫子旧书网图片去水印批量下载功能
+// @author       路人甲乙丙
+// @namespace    iblogc
 // @version      1.0
 // @match        https://book.kongfz.com/*
 // @grant        GM_addStyle
-// @license      AGPL License
+// @license      Apache License, Version 2.0
 // ==/UserScript==
 
 // Function to remove specific strings from href
