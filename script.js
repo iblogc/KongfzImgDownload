@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         孔夫子旧书网图图片下载
+// @name         孔夫子旧书网图片下载
 // @description  孔夫子旧书网图片去水印批量下载功能
 // @version      1.0
 // @match        https://book.kongfz.com/*
