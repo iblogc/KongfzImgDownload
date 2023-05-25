@@ -7,6 +7,7 @@
 // @match        https://book.kongfz.com/*
 // @grant        GM_addStyle
 // @license      Apache License, Version 2.0
+// @homepage     https://github.com/iblogc
 // ==/UserScript==
 
 // Function to remove specific strings from href
