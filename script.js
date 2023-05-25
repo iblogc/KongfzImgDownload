@@ -3,7 +3,7 @@
 // @description  此脚本由 ChatGPT 协助编写完成
 // @author       路人甲乙丙
 // @namespace    iblogc
-// @version      1.3
+// @version      1.4
 // @match        https://book.kongfz.com/*
 // @grant        GM_addStyle
 // @license      Apache License, Version 2.0
@@ -25,22 +25,22 @@ function createImageGallery(images) {
 
   // Create an image container for each image
   images.forEach((image, index) => {
-    const imageContainer = document.createElement('div');
-    imageContainer.className = 'imageContainer';
+      const imageContainer = document.createElement('div');
+      imageContainer.className = 'imageContainer';
 
-    // Create an image element
-    const img = document.createElement('img');
-    img.src = image;
-    img.className = 'image';
-    imageContainer.appendChild(img);
+      // Create an image element
+      const img = document.createElement('img');
+      img.src = image;
+      img.className = 'image';
+      imageContainer.appendChild(img);
 
-    // Append the image container to the modal container
-    modalContainer.appendChild(imageContainer);
+      // Append the image container to the modal container
+      modalContainer.appendChild(imageContainer);
   });
 
   // Create a button to download the images
   const downloadButton = document.createElement('button');
-  downloadButton.innerText = '😆Download Images';
+  downloadButton.innerText = '👉 下载图片';
   downloadButton.id = 'downloadButton'; 
   downloadButton.style.backgroundColor = '#026052'; // 设置按钮的背景颜色
   downloadButton.style.color = 'white'; // 设置按钮的文本颜色
@@ -73,74 +73,112 @@ createImageGallery(images);
 
 // Function to handle the click event on the download button
 function handleDownloadButtonClick() {
-  // Create a link element for each image and trigger the download
-  images.forEach((image) => {
-    const link = document.createElement('a');
-    link.href = image;
-    link.download = image.split('/').pop();
+  if (images.length === 0) {
+      downloadButton.innerText = '🧐 商品详情中没有图片可以下载';
+      return ;
+  }
 
-    fetch(link)
-      .then(response => response.blob())
-      .then(blob => {
-        // 创建一个临时的URL对象
-        const url = URL.createObjectURL(blob);
+  // Disable the download button
+  downloadButton.disabled = true;
+  downloadButton.innerText = 'Downloading...';
 
-        // 创建一个链接元素并设置下载属性
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = image.split('/').pop();
-        link.click();
 
-        // 释放临时URL对象
-        URL.revokeObjectURL(url);
+  // Counter variables for tracking download progress
+  let downloadedCount = 0;
+  let successCount = 0;
+
+  // Function to handle individual image download
+  function downloadImage(image) {
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = image.split('/').pop();
+
+      fetch(link)
+          .then(response => response.blob())
+          .then(blob => {
+          const url = URL.createObjectURL(blob);
+
+          const downloadLink = document.createElement('a');
+          downloadLink.href = url;
+          downloadLink.download = image.split('/').pop();
+
+          // Simulate a click event to trigger the download
+          downloadLink.click();
+
+          URL.revokeObjectURL(url);
+
+          successCount++;
+
+          // Update download progress
+          downloadButton.innerText = `${successCount}/${images.length}`;
+          if (successCount === images.length) {
+              // All images downloaded successfully
+              downloadButton.innerText = `🎉 ${images.length} 张图片下载成功`;
+          }
       })
-      .catch(error => {
-        console.error('下载图片时发生错误:', error);
+          .catch(error => {
+          downloadButton.innerText = '⛔ 下载图片时发生错误'
+          console.error('下载图片时发生错误:', error);
+      })
+          .finally(() => {
+          downloadedCount++;
+
+          // Check if all images have been processed
+          if (downloadedCount === images.length) {
+              // Re-enable the download button
+              downloadButton.disabled = false;
+          }
       });
-  });
+  }
+
+  // Download each image in the images array
+  images.forEach(downloadImage);
 }
 
 // Add event listener to the download button
-document.getElementById('downloadButton').addEventListener('click', handleDownloadButtonClick);
+downloadButton.addEventListener('click', handleDownloadButtonClick);
+
+// Add event listener to the download button
+// document.getElementById('downloadButton').addEventListener('click', handleDownloadButtonClick);
 
 // Add custom styles for the image gallery
 GM_addStyle(`
-  #imageModal {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.8);
-    z-index: 9999;
-    padding: 20px;
-  }
+#imageModal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  padding: 20px;
+}
 
-  .imageContainer {
-    margin: 10px;
-  }
+.imageContainer {
+  margin: 10px;
+}
 
-  .image {
-    width: 200px;
-    height: auto;
-  }
+.image {
+  width: 200px;
+  height: auto;
+}
 
-  #downloadButton {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 10px 20px;
-    background-color: #333;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    z-index: 9999;
-  }
+#downloadButton {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 9999;
+}
 `);
 
 // I'm done writing.
