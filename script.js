@@ -41,7 +41,9 @@ function createImageGallery(images) {
   // Create a button to download the images
   const downloadButton = document.createElement('button');
   downloadButton.innerText = 'Download Images';
-  downloadButton.id = 'downloadButton';
+  downloadButton.id = 'downloadButton'; 
+  downloadButton.style.backgroundColor = '#43c2ae'; // 设置按钮的背景颜色
+  downloadButton.style.color = 'white'; // 设置按钮的文本颜色
   document.body.appendChild(downloadButton);
 }
 
