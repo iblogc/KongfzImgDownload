@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         孔夫子旧书网图片下载
+// @name         孔夫子旧书网图片批量去水印下载
 // @description  孔夫子旧书网图片去水印批量下载功能
 // @author       路人甲乙丙
 // @namespace    iblogc
-// @version      1.2
+// @version      1.3
 // @match        https://book.kongfz.com/*
 // @grant        GM_addStyle
 // @license      Apache License, Version 2.0
