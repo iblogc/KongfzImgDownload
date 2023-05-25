@@ -3,7 +3,7 @@
 // @description  孔夫子旧书网图片去水印批量下载功能
 // @author       路人甲乙丙
 // @namespace    iblogc
-// @version      1.1
+// @version      1.2
 // @match        https://book.kongfz.com/*
 // @grant        GM_addStyle
 // @license      Apache License, Version 2.0
@@ -42,7 +42,7 @@ function createImageGallery(images) {
   const downloadButton = document.createElement('button');
   downloadButton.innerText = '😆Download Images';
   downloadButton.id = 'downloadButton'; 
-  downloadButton.style.backgroundColor = '#43c2ae'; // 设置按钮的背景颜色
+  downloadButton.style.backgroundColor = '#026052'; // 设置按钮的背景颜色
   downloadButton.style.color = 'white'; // 设置按钮的文本颜色
   document.body.appendChild(downloadButton);
 }
