@@ -6,6 +6,7 @@
 // @namespace    iblogc
 // @match        *://search.kongfz.com/product_result/*
 // @match        *://book.kongfz.com/*
+// @match        *://item.kongfz.com/book/*
 // @grant        GM_addStyle
 // @grant        GM_download
 // @grant        GM_xmlhttpRequest
@@ -22,7 +23,7 @@
     return href.replace(/(_water|_n|_p|_b)/g, '');
   }
 
-  function createImageGallery(images) {
+  function createBookPageDownloadButton(images) {
     const downloadButton = document.createElement('button');
     downloadButton.innerText = `👉 下载图片（${images.length}）`;
     downloadButton.id = 'downloadButton';
@@ -32,8 +33,41 @@
     return downloadButton;
   }
 
+  function createSearchPageDownloadButton(doc, item) {
+    const downloadButton = doc.createElement('button');
+    downloadButton.innerText = '👉 下载图片';
+    downloadButton.className = 'searchPageDownloadButton';
+    downloadButton.style.backgroundColor = '#026052';
+    downloadButton.style.color = 'white';
+    const addCartBtn = item.querySelector('div.add-cart-btn');
+    addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn);
+    return downloadButton
+  }
+
+  function createBookListPageDownloadButton(doc, item) {
+    const downloadButton = doc.createElement('button');
+    downloadButton.innerText = '👉 下载图片';
+    downloadButton.className = 'bookListPageDownloadButton';
+    downloadButton.style.backgroundColor = '#026052';
+    downloadButton.style.color = 'white';
+    const addCartBtn = item.querySelector('a.con-btn-cart');
+    // addCartBtn.parentNode.insertAdjacentElement(downloadButton, addCartBtn);
+    addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn.nextSibling);
+    return downloadButton
+  }
+
   function handleDownloadButtonClick() {
-    const images = extractImagesFromBookPage();
+    extractImagesAndDownFromWebPage(document);
+  }
+
+  function extractImagesFromBookPage(doc) {
+    const liElements = doc.querySelectorAll('ul#figure-info-box > li');
+    return Array.from(liElements, liElement => removeWatermarkFromHref(liElement.querySelector('a').href));
+  }
+
+  // 解析网页下载图片
+  function extractImagesAndDownFromWebPage(doc, downloadButton) {
+    const images = extractImagesFromBookPage(doc);
     if (images.length === 0) {
       downloadButton.innerText = '🧐 商品详情中没有图片可以下载';
       downloadButton.style.backgroundColor = '#ccc';
@@ -48,11 +82,11 @@
     let successCount = 0;
     let failCount = 0;
 
+    const bookName = (doc.querySelector('meta[name="keywords"]').getAttribute('content') || '').match(/([^,]+)/)[1] || '';
+    const isbn = (doc.querySelector('meta[name="description"]').getAttribute('content') || '').match(/ISBN：([0-9]*)/)[1] || '';
+
     images.forEach((imageUrl, index) => {
-      downloadButton.innerText = 'Downloading...';
       const extension = (imageUrl.split('.').pop() || '').toLowerCase();
-      const bookName = (document.querySelector('meta[name="keywords"]').getAttribute('content') || '').match(/([^,]+)/)[1] || '';
-      const isbn = (document.querySelector('meta[name="description"]').getAttribute('content') || '').match(/ISBN：([0-9]*)/)[1] || '';
       const imageName = `${bookName.trim()}-${isbn.trim()}-${index + 1}.${extension || 'jpg'}`;
 
       GM_download({
@@ -77,91 +111,42 @@
     });
   }
 
-  function extractImagesFromBookPage() {
-    const liElements = document.querySelectorAll('ul#figure-info-box > li');
-    return Array.from(liElements, liElement => removeWatermarkFromHref(liElement.querySelector('a').href));
-  }
 
-  function handleSearchPageItemClick(item) {
-    const bookName = item.getAttribute('itemname');
-    const isbn = item.getAttribute('isbn');
-    console.log('ISBN:', isbn);
-    console.log('Item Name:', bookName);
-
-    const titleLink = item.querySelector('.item-info > .title > a');
-    const href = titleLink.href;
-    console.log(titleLink.href)
-
-    const itemDownloadButton = document.createElement('button');
-    itemDownloadButton.innerText = '👉 下载图片';
-    itemDownloadButton.className = 'itemDownloadButton';
-    itemDownloadButton.style.backgroundColor = '#026052';
-    itemDownloadButton.style.color = 'white';
-
-    const addCartBtn = item.querySelector('div.add-cart-btn');
-    addCartBtn.parentNode.insertBefore(itemDownloadButton, addCartBtn);
-
-    // item.parentNode.insertBefore(itemDownloadButton, addCartBtn);
-
-    itemDownloadButton.addEventListener('click', () => {
-      console.log(href)
-      itemDownloadButton.disabled = true;
-      itemDownloadButton.innerText = 'Downloading...';
+  function extractImagesFromBookPageUrl(bookPageUrl, downloadButton) { 
+    downloadButton.addEventListener('click', () => {
       GM_xmlhttpRequest({
         method: 'GET',
-        url: href,
+        url: bookPageUrl,
         onload: function (response) {
           const parser = new DOMParser();
           const doc = parser.parseFromString(response.responseText, 'text/html');
-          const imageElements = doc.querySelectorAll('ul#figure-info-box > li > a');
-          const images = Array.from(imageElements, image => removeWatermarkFromHref(image.getAttribute('href')));
-          console.log(images)
-
-          if (images.length === 0) {
-            itemDownloadButton.innerText = '🧐 商品详情中没有图片可以下载';
-            itemDownloadButton.style.backgroundColor = '#ccc';
-            itemDownloadButton.style.color = '#999';
-            itemDownloadButton.style.cursor = 'not-allowed';
-            return;
-          }
-
-          let successCount = 0;
-          let failCount = 0;
-
-          images.forEach((imageUrl, index) => {
-            const extension = (imageUrl.split('.').pop() || '').toLowerCase();
-            const imageName = `${bookName.trim()}-${isbn.trim()}-${index + 1}.${extension}`;
-
-            console.log(imageUrl)
-
-            GM_download({
-              url: imageUrl,
-              name: imageName,
-              onload: () => {
-                successCount++;
-                console.log('Image downloaded:', imageUrl);
-                if (successCount === images.length) {
-                  itemDownloadButton.innerText = `🎉 ${successCount} 张图片下载成功`;
-                  itemDownloadButton.style.backgroundColor = '#ccc';
-                  itemDownloadButton.style.color = '#999';
-                  itemDownloadButton.style.cursor = 'not-allowed';
-                }
-              },
-              onerror: error => {
-                failCount++;
-                console.log('Error downloading image:', error);
-                itemDownloadButton.innerText = `⛔ 下载图片时发生错误${failCount}`;
-              }
-            });
-          });
+          extractImagesAndDownFromWebPage(doc, downloadButton);
         },
         onerror: function (error) {
           console.log('Error:', error);
+          downloadButton.innerText = `⛔ 解析网页时出错`;
         }
       });
     });
   }
-    let intervalId;
+
+
+  function handleSearchPageItemClick(item) {
+    const titleLink = item.querySelector('.item-info > .title > a');
+    const bookPageUrl = titleLink.href;
+    const downloadButton = createSearchPageDownloadButton(document, item)
+    extractImagesFromBookPageUrl(bookPageUrl, downloadButton)
+  }
+
+  function handleBookListPageItemClick(item) {
+    const titleLink = item.querySelector('div.list-con-title > a');
+    const bookPageUrl = titleLink.href;
+    const downloadButton = createBookListPageDownloadButton(document, item)
+    extractImagesFromBookPageUrl(bookPageUrl, downloadButton)
+  }
+
+
+  let intervalId;
   function handleSearchPage() {
     const listBox = document.querySelector('#listBox');
     if (listBox) {
@@ -173,14 +158,28 @@
     }
   }
 
+  function handleBookListPage() {
+    const listBox = document.querySelector('ul.itemList');
+    if (listBox) {
+      clearInterval(intervalId);
+      const items = document.querySelectorAll('ul.itemList > li');
+      items.forEach(item => {
+        handleBookListPageItemClick(item);
+      });
+    }
+  }
 
-  if (currentPath.includes('//book.kongfz.com')) {
-    console.log('//book.kongfz.com');
-    const downloadButton = createImageGallery(extractImagesFromBookPage());
+
+  if (currentPath.includes('//book.kongfz.com/')) {
+    console.log('//book.kongfz.com/');
+    const downloadButton = createBookPageDownloadButton(extractImagesFromBookPage(document));
     downloadButton.addEventListener('click', handleDownloadButtonClick);
-  } else if (currentPath.includes('//search.kongfz.com/product_result')) {
-    console.log('//search.kongfz.com/product_result');
+  } else if (currentPath.includes('//search.kongfz.com/product_result/')) {
+    console.log('//search.kongfz.com/product_result/');
     intervalId = setInterval(handleSearchPage, 1000);
+  } else if (currentPath.includes('//item.kongfz.com/book/')) {
+    console.log('//item.kongfz.com/book/');
+    intervalId = setInterval(handleBookListPage, 1000);
   }
 
 
@@ -197,7 +196,7 @@
   cursor: pointer;
   z-index: 9999;
 }
-.itemDownloadButton {
+.searchPageDownloadButton {
   padding: 1px 5px;
   background-color: #333;
   color: #fff;
@@ -207,6 +206,18 @@
   z-index: 9999;
   font-size: 12px;
   margin: 0px 10px;
+}
+.bookListPageDownloadButton {
+  padding: 1px 5px;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  z-index: 9999;
+  font-size: 12px;
+  margin: 8px auto 0;
+  display: block;
 }
 button.disabled {
   background-color: #ccc;
