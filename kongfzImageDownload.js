@@ -82,9 +82,10 @@
     let successCount = 0;
     let failCount = 0;
 
-    const bookName = (doc.querySelector('meta[name="keywords"]').getAttribute('content') || '').match(/([^,]+)/)[1] || '';
-    const isbn = (doc.querySelector('meta[name="description"]').getAttribute('content') || '').match(/ISBN：([0-9]*)/)[1] || '';
-
+    const bookNameContent = (doc.querySelector('meta[name="keywords"]').getAttribute('content') || '').match(/([^,]+)/)[1];
+    const bookName = bookNameContent && bookNameContent.length > 1 ? bookNameContent[1] : '';
+    const isbnContent = (doc.querySelector('meta[name="description"]').getAttribute('content') || '').match(/ISBN：([0-9]*)/)[1];
+    const isbn = isbnContent && isbnContent.length > 1 ? isbnContent[1] : '';
     images.forEach((imageUrl, index) => {
       const extension = (imageUrl.split('.').pop() || '').toLowerCase();
       const imageName = `${bookName.trim()}-${isbn.trim()}-${index + 1}.${extension || 'jpg'}`;
