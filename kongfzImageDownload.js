@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         孔夫子旧书网图片下载
 // @description  孔夫子旧书网图片批量去水印下载，此脚本由 ChatGPT 协助编写完成。
-// @version      2.1
+// @version      2.2
 // @author       路人甲乙丙
 // @namespace    iblogc
 // @match        *://search.kongfz.com/product_result/*
