@@ -56,8 +56,8 @@
     return downloadButton
   }
 
-  function handleDownloadButtonClick() {
-    extractImagesAndDownFromWebPage(document);
+  function handleDownloadButtonClick(document, downloadButton) {
+    extractImagesAndDownFromWebPage(document, downloadButton);
   }
 
   function extractImagesFromBookPage(doc) {
@@ -173,7 +173,7 @@
   if (currentPath.includes('//book.kongfz.com/')) {
     console.log('//book.kongfz.com/');
     const downloadButton = createBookPageDownloadButton(extractImagesFromBookPage(document));
-    downloadButton.addEventListener('click', handleDownloadButtonClick);
+    downloadButton.addEventListener('click', () => handleDownloadButtonClick(document, downloadButton));
   } else if (currentPath.includes('//search.kongfz.com/product_result/')) {
     console.log('//search.kongfz.com/product_result/');
     intervalId = setInterval(handleSearchPage, 1000);
