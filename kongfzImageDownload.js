@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         孔夫子旧书网图片下载
 // @description  孔夫子旧书网图片批量去水印下载，此脚本由 ChatGPT 协助编写完成。
-// @version      2.2
+// @version      2.3
 // @author       路人甲乙丙
 // @namespace    iblogc
 // @match        *://search.kongfz.com/product_result/*
@@ -82,9 +82,9 @@
     let successCount = 0;
     let failCount = 0;
 
-    const bookNameContent = (doc.querySelector('meta[name="keywords"]').getAttribute('content') || '').match(/([^,]+)/)[1];
+    const bookNameContent = (doc.querySelector('meta[name="keywords"]').getAttribute('content') || '').match(/([^,]+)/);
     const bookName = bookNameContent && bookNameContent.length > 1 ? bookNameContent[1] : '';
-    const isbnContent = (doc.querySelector('meta[name="description"]').getAttribute('content') || '').match(/ISBN：([0-9]*)/)[1];
+    const isbnContent = (doc.querySelector('meta[name="description"]').getAttribute('content') || '').match(/ISBN：([0-9]*)/);
     const isbn = isbnContent && isbnContent.length > 1 ? isbnContent[1] : '';
     images.forEach((imageUrl, index) => {
       const extension = (imageUrl.split('.').pop() || '').toLowerCase();
@@ -96,6 +96,7 @@
         onload: () => {
           successCount++;
           console.log('Image downloaded:', imageUrl);
+          downloadButton.innerText = `Downloading...(${successCount}/${images.length})`;
           if (successCount === images.length) {
             downloadButton.innerText = `🎉 ${successCount} 张图片下载成功`;
             downloadButton.style.backgroundColor = '#ccc';
