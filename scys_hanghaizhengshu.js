@@ -1,10 +1,9 @@
 // ==UserScript==
 // @name         生财有术航海实战证书获取-路人甲乙丙
-// @namespace    http://tampermonkey.net/
+// @namespace    iblogc
 // @version      0.4
 // @description  问题反馈联系微信Byte4Me
 // @author       路人甲乙丙
-// @namespace    iblogc
 // @match        https://scys.com/*
 // @match        https://scys.com/mobile/activity/landing?activity_id=*
 // @license      Apache License, Version 2.0
