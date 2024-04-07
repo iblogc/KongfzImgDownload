@@ -68,7 +68,7 @@
                 var urlParams = new URLSearchParams(window.location.search);
                 var activityId = urlParams.get('id');
                 // 如果activityId为null，则结束脚本运行，并弹出提示
-                if(activityId === null) {
+                if(activityId === null || !window.location.href.startsWith('https://scys.com/mobile/activity/landing')) {
                     alert('请进入航海实战页面后再点击获取');
                     return;
                 }
