@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         生财有术航海实战证书获取-路人甲乙丙
 // @namespace    iblogc
-// @version      0.6
-// @description  问题反馈联系微信Byte4Me
+// @version      0.7
+// @description  何以生财，唯有实战。（问题反馈联系微信Byte4Me）
 // @author       路人甲乙丙
 // @match        https://scys.com/*
 // @match        https://scys.com/mobile/activity/landing?activity_id=*
