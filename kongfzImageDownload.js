@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         孔夫子旧书网图片下载-路人甲乙丙
-// @description  问题反馈联系微信Byte4Me
-// @version      2.5
+// @description  下载图片自动去水印（问题反馈联系微信Byte4Me）
+// @version      2.7
 // @author       路人甲乙丙
 // @namespace    iblogc
 // @match        *://search.kongfz.com/product_result/*
