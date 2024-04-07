@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         孔夫子旧书网图片下载
-// @description  孔夫子旧书网图片批量去水印下载，此脚本由 ChatGPT 协助编写完成。
-// @version      2.3
+// @name         孔夫子旧书网图片下载-路人甲乙丙
+// @description  问题反馈联系微信Byte4Me
+// @version      2.5
 // @author       路人甲乙丙
 // @namespace    iblogc
 // @match        *://search.kongfz.com/product_result/*
@@ -11,18 +11,18 @@
 // @grant        GM_download
 // @grant        GM_xmlhttpRequest
 // @license      Apache License, Version 2.0
-// @homepage     https://github.com/iblogc
+// @homepage     https://github.com/iblogc/TampermonkeyScript/blob/main/kongfzImageDownload.js
 // ==/UserScript==
-
+ 
 (function () {
   'use strict';
-
+ 
   const currentPath = window.location.href;
-
+ 
   function removeWatermarkFromHref(href) {
     return href.replace(/(_water|_n|_p|_b)/g, '');
   }
-
+ 
   function createBookPageDownloadButton(images) {
     const downloadButton = document.createElement('button');
     downloadButton.innerText = `👉 下载图片（${images.length}）`;
@@ -32,7 +32,7 @@
     document.body.appendChild(downloadButton);
     return downloadButton;
   }
-
+ 
   function createSearchPageDownloadButton(doc, item) {
     const downloadButton = doc.createElement('button');
     downloadButton.innerText = '👉 下载图片';
@@ -43,7 +43,7 @@
     addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn);
     return downloadButton
   }
-
+ 
   function createBookListPageDownloadButton(doc, item) {
     const downloadButton = doc.createElement('button');
     downloadButton.innerText = '👉 下载图片';
@@ -55,16 +55,16 @@
     addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn.nextSibling);
     return downloadButton
   }
-
+ 
   function handleDownloadButtonClick(document, downloadButton) {
     extractImagesAndDownFromWebPage(document, downloadButton);
   }
-
+ 
   function extractImagesFromBookPage(doc) {
     const liElements = doc.querySelectorAll('ul#figure-info-box > li');
     return Array.from(liElements, liElement => removeWatermarkFromHref(liElement.querySelector('a').href));
   }
-
+ 
   // 解析网页下载图片
   function extractImagesAndDownFromWebPage(doc, downloadButton) {
     const images = extractImagesFromBookPage(doc);
@@ -75,13 +75,13 @@
       downloadButton.style.cursor = 'not-allowed';
       return;
     }
-
+ 
     downloadButton.disabled = true;
     downloadButton.innerText = 'Downloading...';
-
+ 
     let successCount = 0;
     let failCount = 0;
-
+ 
     const bookNameContent = (doc.querySelector('meta[name="keywords"]').getAttribute('content') || '').match(/([^,]+)/);
     const bookName = bookNameContent && bookNameContent.length > 1 ? bookNameContent[1] : '';
     const isbnContent = (doc.querySelector('meta[name="description"]').getAttribute('content') || '').match(/ISBN：([0-9]*)/);
@@ -89,7 +89,7 @@
     images.forEach((imageUrl, index) => {
       const extension = (imageUrl.split('.').pop() || '').toLowerCase();
       const imageName = `${bookName.trim()}-${isbn.trim()}-${index + 1}.${extension || 'jpg'}`;
-
+ 
       GM_download({
         url: imageUrl,
         name: imageName,
@@ -112,8 +112,8 @@
       });
     });
   }
-
-
+ 
+ 
   function extractImagesFromBookPageUrl(bookPageUrl, downloadButton) { 
     downloadButton.addEventListener('click', () => {
       GM_xmlhttpRequest({
@@ -131,23 +131,23 @@
       });
     });
   }
-
-
+ 
+ 
   function handleSearchPageItemClick(item) {
     const titleLink = item.querySelector('.item-info > .title > a');
     const bookPageUrl = titleLink.href;
     const downloadButton = createSearchPageDownloadButton(document, item)
     extractImagesFromBookPageUrl(bookPageUrl, downloadButton)
   }
-
+ 
   function handleBookListPageItemClick(item) {
     const titleLink = item.querySelector('div.list-con-title > a');
     const bookPageUrl = titleLink.href;
     const downloadButton = createBookListPageDownloadButton(document, item)
     extractImagesFromBookPageUrl(bookPageUrl, downloadButton)
   }
-
-
+ 
+ 
   let intervalId;
   function handleSearchPage() {
     const listBox = document.querySelector('#listBox');
@@ -159,7 +159,7 @@
       });
     }
   }
-
+ 
   function handleBookListPage() {
     const listBox = document.querySelector('ul.itemList');
     if (listBox) {
@@ -170,8 +170,8 @@
       });
     }
   }
-
-
+ 
+ 
   if (currentPath.includes('//book.kongfz.com/')) {
     console.log('//book.kongfz.com/');
     const downloadButton = createBookPageDownloadButton(extractImagesFromBookPage(document));
@@ -183,8 +183,8 @@
     console.log('//item.kongfz.com/book/');
     intervalId = setInterval(handleBookListPage, 1000);
   }
-
-
+ 
+ 
   GM_addStyle(`
 #downloadButton {
   position: fixed;
@@ -228,5 +228,5 @@ button.disabled {
   /* 其他样式 */
 }
 `);
-
+ 
 })();
