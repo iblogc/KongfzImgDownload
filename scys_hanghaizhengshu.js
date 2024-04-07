@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         生财有术航海实战证书获取-路人甲乙丙
 // @namespace    iblogc
-// @version      0.5
+// @version      0.6
 // @description  问题反馈联系微信Byte4Me
 // @author       路人甲乙丙
 // @match        https://scys.com/*
@@ -68,7 +68,7 @@
                 var urlParams = new URLSearchParams(window.location.search);
                 var activityId = urlParams.get('id');
                 // 如果activityId为null，则结束脚本运行，并弹出提示
-                if(activityId === null || !window.location.href.startsWith('https://scys.com/mobile/activity/landing')) {
+                if(activityId === null || !(window.location.href.startsWith('https://scys.com/mobile/activity/landing') || window.location.href.startsWith('https://scys.com/activity/landing'))) {
                     alert('请进入航海实战页面后再点击获取');
                     return;
                 }
