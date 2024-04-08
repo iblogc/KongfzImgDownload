@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         生财有术航海实战证书获取-路人甲乙丙
 // @namespace    iblogc
-// @version      1.0
-// @description  支持获取参与过的所有历史航海的证书，以及其他人的证书（生财团队未修复前😀） 何以生财，唯有实战。（问题反馈联系微信Byte4Me）
+// @version      1.1
+// @description  支持获取参与过的所有历史航海的证书，以及其他人的证书（生财团队未修复前😀）。获取其他人证书时，如果那个航海你也有参数，可直接点击获取每天证书，如果那个航海没参数点击按钮只能获取最新证书（要获取每天的证书需要根据最新的stage_id来修改脚本里的stage_id参数，太麻烦又没多大意义，所以脚本不实现了），何以生财，唯有实战。（问题反馈联系微信Byte4Me）
 // @author       路人甲乙丙
 // @match        *://scys.com/*
 // @license      Apache License, Version 2.0
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
     // 解码JWT Token
@@ -17,7 +17,7 @@
         try {
             var base64Url = token.split('.')[1];
             var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join(''));
             return JSON.parse(jsonPayload);
@@ -62,7 +62,7 @@
             button.style.border = 'none';
             button.style.borderRadius = '5px';
             button.style.cursor = 'pointer';
-            button.onclick = function() {
+            button.onclick = function () {
                 // 获取当前页面中的id
                 var urlParams = new URLSearchParams(window.location.search);
                 var activityId = urlParams.get('id');
@@ -111,7 +111,7 @@
                     url: requestURL,
                     headers: requestOptions.headers,
                     data: requestOptions.data,
-                    onload: function(response) {
+                    onload: function (response) {
                         console.log('请求成功:', response.responseText);
                         // 解析响应数据
                         var responseData = JSON.parse(response.responseText);
@@ -128,9 +128,9 @@
                             headers: {
                                 'X-Token': userToken
                             },
-                            onload: function(imageResponse) {
+                            onload: function (imageResponse) {
                                 console.log('获取图片成功:', imageResponse.responseText);
-                                var imageData =  JSON.parse(imageResponse.responseText).data;
+                                var imageData = JSON.parse(imageResponse.responseText).data;
                                 if (imageData == null) {
                                     alert('获取数据异常，请检查输入的生财编号是否正确。');
                                     return;
@@ -158,7 +158,7 @@
                                 img.style.maxWidth = '30%'; // 设置图片显示小一些
 
                                 // 点击图片以外区域关闭图片展示
-                                overlay.onclick = function(event) {
+                                overlay.onclick = function (event) {
                                     if (event.target === overlay) {
                                         document.body.removeChild(overlay);
                                         document.body.removeChild(getCertButton);
@@ -181,7 +181,7 @@
                                 getCertButton.style.border = 'none';
                                 getCertButton.style.borderRadius = '5px';
                                 getCertButton.style.cursor = 'pointer';
-                                getCertButton.onclick = function() {
+                                getCertButton.onclick = function () {
                                     // 发送获取逐天证书请求
                                     GM_xmlhttpRequest({
                                         method: 'GET',
@@ -189,27 +189,35 @@
                                         headers: {
                                             'X-Token': userToken
                                         },
-                                        onload: function(certResponse) {
+                                        onload: function (certResponse) {
                                             console.log('获取逐天证书成功:', certResponse.responseText);
-                                             // 取出数据并将数组倒序排列
-                                            var stageIds = JSON.parse(certResponse.responseText).data.project.slice().reverse();
-
-
+                                            // 取出数据并将数组倒序排列
+                                            var stageIds = JSON.parse(certResponse.responseText).data.project;
+                                            var days = []
+                                            for (let i = 0; i < 21; i++) {
+                                                days.push(stageIds[0] + i);
+                                            }
                                             // 创建第x天按钮
                                             var dayButtons = [];
-                                            stageIds.forEach((stageId, index) => {
+                                            // 倒序循环
+                                            var daKaIndex = 0
+                                            days.slice().reverse().forEach((stageId, index) => {
                                                 var dayButton = document.createElement('button');
-                                                dayButton.innerHTML = `第${stageIds.length - index}天`;
+                                                dayButton.innerHTML = `第${days.length - index}天`;
                                                 dayButton.style.position = 'fixed';
-                                                dayButton.style.bottom = `${60 + 40 * (index + 1)}px`;
+                                                dayButton.style.bottom = `${70 + 30 * (index + 1)}px`;
                                                 dayButton.style.right = '20px';
-                                                dayButton.style.padding = '10px 10px';
+                                                dayButton.style.padding = '5px 10px';
                                                 dayButton.style.backgroundColor = '#006659'; // 添加背景颜色
                                                 dayButton.style.color = '#fff';
                                                 dayButton.style.border = 'none';
                                                 dayButton.style.borderRadius = '5px';
                                                 dayButton.style.cursor = 'pointer';
-                                                dayButton.onclick = function() {
+                                                if (stageIds.includes(stageId)) {
+                                                    var score = ' (' + (stageIds.length - daKaIndex++) + '/21)'
+                                                    dayButton.textContent += score
+                                                }
+                                                dayButton.onclick = function () {
                                                     // 发送获取图片的请求
                                                     GM_xmlhttpRequest({
                                                         method: 'GET',
@@ -217,8 +225,8 @@
                                                         headers: {
                                                             'X-Token': userToken
                                                         },
-                                                        onload: function(dayImageResponse) {
-                                                            console.log('获取第', index + 1, '天图片成功:', dayImageResponse.responseText);
+                                                        onload: function (dayImageResponse) {
+                                                            console.log('获取第', days.length - index, '天图片成功:', dayImageResponse.responseText);
                                                             var dayImageURL = JSON.parse(dayImageResponse.responseText).data.poster;
 
                                                             // 创建图片展示蒙版
@@ -241,7 +249,7 @@
                                                             dayImg.style.maxWidth = '30%'; // 设置图片显示小一些
 
                                                             // 点击图片以外区域关闭图片展示
-                                                            dayOverlay.onclick = function(event) {
+                                                            dayOverlay.onclick = function (event) {
                                                                 if (event.target === dayOverlay) {
                                                                     overlay.removeChild(dayOverlay);
                                                                 }
@@ -252,7 +260,7 @@
                                                             overlay.appendChild(dayOverlay);
                                                             document.body.appendChild(overlay);
                                                         },
-                                                        onerror: function(error) {
+                                                        onerror: function (error) {
                                                             console.error('获取第', index + 1, '天图片失败:', error);
                                                         }
                                                     });
@@ -263,7 +271,7 @@
                                                 document.body.appendChild(overlay);
                                             });
                                         },
-                                        onerror: function(error) {
+                                        onerror: function (error) {
                                             console.error('获取逐天证书失败:', error);
                                         }
                                     });
@@ -274,12 +282,12 @@
                                 document.body.appendChild(overlay);
                                 // document.body.appendChild(getCertButton);
                             },
-                            onerror: function(error) {
+                            onerror: function (error) {
                                 console.error('获取图片失败:', error);
                             }
                         });
                     },
-                    onerror: function(error) {
+                    onerror: function (error) {
                         console.error('请求失败:', error);
                     }
                 });
