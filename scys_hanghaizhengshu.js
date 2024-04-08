@@ -4,8 +4,7 @@
 // @version      0.8
 // @description  支持获取参与过的所有历史航海的证书，以及其他人的证书（生财团队未修复前😀） 何以生财，唯有实战。（问题反馈联系微信Byte4Me）
 // @author       路人甲乙丙
-// @match        https://scys.com/*
-// @match        https://scys.com/mobile/activity/landing?activity_id=*
+// @match        *://scys.com/*
 // @license      Apache License, Version 2.0
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
