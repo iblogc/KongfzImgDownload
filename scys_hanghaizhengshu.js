@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         生财有术航海实战证书获取-路人甲乙丙
 // @namespace    iblogc
-// @version      1.2
+// @version      1.1
 // @description  支持获取参与过的所有历史航海的证书，以及其他人的证书（生财团队未修复前😀）。获取其他人证书时，如果那个航海你也有参数，可直接点击获取每天证书，如果那个航海没参数点击按钮只能获取最新证书（要获取每天的证书需要根据最新的stage_id来修改脚本里的stage_id参数，太麻烦又没多大意义，所以脚本不实现了），何以生财，唯有实战。（问题反馈联系微信Byte4Me）
 // @author       路人甲乙丙
 // @match        *://scys.com/*
@@ -191,15 +191,19 @@
                                         },
                                         onload: function (certResponse) {
                                             console.log('获取逐天证书结果:', certResponse.responseText);
-                                            if (JSON.parse(certResponse.responseText).data == null) {
-                                                alert('获取数据异常，你可能想获取别人的逐天航海证书，而你自己又没参加过这个航海，如果是这样请看脚本说明。');
-                                                return;
-                                            }
-                                            // 取出数据并将数组倒序排列
-                                            var stageIds = JSON.parse(certResponse.responseText).data.project;
                                             var days = []
-                                            for (let i = 0; i < 21; i++) {
-                                                days.push(stageIds[0] + i);
+                                            var stageIds = []
+                                            // 当前用户没有参与此航海，所以要取前面获取到的stageId，当前此航海最后的stageId值
+                                            if (JSON.parse(certResponse.responseText).data == null) {
+                                                for (let i = 1; i <= 21; i++) {
+                                                    days.push(stageId + i - 21);
+                                                }
+                                            } else {
+                                                // 取出数据并将数组倒序排列
+                                                stageIds = JSON.parse(certResponse.responseText).data.project;
+                                                for (let i = 0; i < 21; i++) {
+                                                    days.push(stageIds[0] + i);
+                                                }
                                             }
                                             // 创建第x天按钮
                                             var dayButtons = [];
