@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         生财有术航海实战证书获取-路人甲乙丙
 // @namespace    iblogc
-// @version      0.8
+// @version      1.0
 // @description  支持获取参与过的所有历史航海的证书，以及其他人的证书（生财团队未修复前😀） 何以生财，唯有实战。（问题反馈联系微信Byte4Me）
 // @author       路人甲乙丙
 // @match        *://scys.com/*
@@ -45,9 +45,9 @@
     var userToken = localStorage.getItem('__user_token.v3');
 
     // 如果找到了值，则解析它并获取userid
-    if(userToken !== null) {
+    if (userToken !== null) {
         var userId = parseUserToken(userToken);
-        if(userId !== null) {
+        if (userId !== null) {
             console.log('从__user_token.v3中获取的userid为:', userId);
 
             // 创建按钮触发请求
@@ -70,7 +70,7 @@
                     activityId = urlParams.get('activity_id');
                 }
                 // 如果activityId为null，则结束脚本运行，并弹出提示
-                if(activityId === null || !(window.location.href.startsWith('https://scys.com/mobile/activity/landing') || window.location.href.startsWith('https://scys.com/activity/landing'))) {
+                if (activityId === null || !(window.location.href.startsWith('https://scys.com/mobile/activity/landing') || window.location.href.startsWith('https://scys.com/activity/landing'))) {
                     alert('请进入航海实战页面后再点击获取');
                     return;
                 }
@@ -130,6 +130,11 @@
                             },
                             onload: function(imageResponse) {
                                 console.log('获取图片成功:', imageResponse.responseText);
+                                var imageData =  JSON.parse(imageResponse.responseText).data;
+                                if (imageData == null) {
+                                    alert('获取数据异常，请检查输入的生财编号是否正确。');
+                                    return;
+                                }
                                 // 解析获取到的图片 URL
                                 var imageURL = JSON.parse(imageResponse.responseText).data.poster;
 
@@ -156,11 +161,118 @@
                                 overlay.onclick = function(event) {
                                     if (event.target === overlay) {
                                         document.body.removeChild(overlay);
+                                        document.body.removeChild(getCertButton);
+                                        dayButtons.forEach(btn => document.body.removeChild(btn));
                                     }
                                 };
 
                                 overlay.appendChild(img);
                                 document.body.appendChild(overlay);
+
+                                // 创建获取逐天证书按钮
+                                var getCertButton = document.createElement('button');
+                                getCertButton.innerHTML = '🚀 获取逐天证书';
+                                getCertButton.style.position = 'fixed';
+                                getCertButton.style.bottom = '60px';
+                                getCertButton.style.right = '20px';
+                                getCertButton.style.padding = '10px 10px';
+                                getCertButton.style.backgroundColor = '#006659'; // 添加背景颜色
+                                getCertButton.style.color = '#fff';
+                                getCertButton.style.border = 'none';
+                                getCertButton.style.borderRadius = '5px';
+                                getCertButton.style.cursor = 'pointer';
+                                getCertButton.onclick = function() {
+                                    // 发送获取逐天证书请求
+                                    GM_xmlhttpRequest({
+                                        method: 'GET',
+                                        url: `https://scys.com/search/activity/stage?activity_id=${activityId}`,
+                                        headers: {
+                                            'X-Token': userToken
+                                        },
+                                        onload: function(certResponse) {
+                                            console.log('获取逐天证书成功:', certResponse.responseText);
+                                             // 取出数据并将数组倒序排列
+                                            var stageIds = JSON.parse(certResponse.responseText).data.project.slice().reverse();
+
+
+                                            // 创建第x天按钮
+                                            var dayButtons = [];
+                                            stageIds.forEach((stageId, index) => {
+                                                var dayButton = document.createElement('button');
+                                                dayButton.innerHTML = `第${stageIds.length - index}天`;
+                                                dayButton.style.position = 'fixed';
+                                                dayButton.style.bottom = `${60 + 40 * (index + 1)}px`;
+                                                dayButton.style.right = '20px';
+                                                dayButton.style.padding = '10px 10px';
+                                                dayButton.style.backgroundColor = '#006659'; // 添加背景颜色
+                                                dayButton.style.color = '#fff';
+                                                dayButton.style.border = 'none';
+                                                dayButton.style.borderRadius = '5px';
+                                                dayButton.style.cursor = 'pointer';
+                                                dayButton.onclick = function() {
+                                                    // 发送获取图片的请求
+                                                    GM_xmlhttpRequest({
+                                                        method: 'GET',
+                                                        url: `https://scys.com/search/activity/project/submit/poster?id=${activityId}&number=${userIdToUse}&stage=${stageId}`,
+                                                        headers: {
+                                                            'X-Token': userToken
+                                                        },
+                                                        onload: function(dayImageResponse) {
+                                                            console.log('获取第', index + 1, '天图片成功:', dayImageResponse.responseText);
+                                                            var dayImageURL = JSON.parse(dayImageResponse.responseText).data.poster;
+
+                                                            // 创建图片展示蒙版
+                                                            var dayOverlay = document.createElement('div');
+                                                            dayOverlay.style.position = 'fixed';
+                                                            dayOverlay.style.top = '0';
+                                                            dayOverlay.style.left = '0';
+                                                            dayOverlay.style.width = '100%';
+                                                            dayOverlay.style.height = '100%';
+                                                            dayOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                                                            dayOverlay.style.zIndex = '9999';
+
+                                                            // 创建图片
+                                                            var dayImg = document.createElement('img');
+                                                            dayImg.src = dayImageURL;
+                                                            dayImg.style.position = 'absolute';
+                                                            dayImg.style.top = '50%';
+                                                            dayImg.style.left = '50%';
+                                                            dayImg.style.transform = 'translate(-50%, -50%)';
+                                                            dayImg.style.maxWidth = '30%'; // 设置图片显示小一些
+
+                                                            // 点击图片以外区域关闭图片展示
+                                                            dayOverlay.onclick = function(event) {
+                                                                if (event.target === dayOverlay) {
+                                                                    overlay.removeChild(dayOverlay);
+                                                                }
+                                                            };
+
+                                                            dayOverlay.appendChild(dayImg);
+                                                            // document.body.appendChild(dayOverlay);
+                                                            overlay.appendChild(dayOverlay);
+                                                            document.body.appendChild(overlay);
+                                                        },
+                                                        onerror: function(error) {
+                                                            console.error('获取第', index + 1, '天图片失败:', error);
+                                                        }
+                                                    });
+                                                };
+                                                dayButtons.push(dayButton);
+                                                // document.body.appendChild(dayButton);
+                                                overlay.appendChild(dayButton);
+                                                document.body.appendChild(overlay);
+                                            });
+                                        },
+                                        onerror: function(error) {
+                                            console.error('获取逐天证书失败:', error);
+                                        }
+                                    });
+                                };
+
+                                overlay.appendChild(img);
+                                overlay.appendChild(getCertButton);
+                                document.body.appendChild(overlay);
+                                // document.body.appendChild(getCertButton);
                             },
                             onerror: function(error) {
                                 console.error('获取图片失败:', error);
