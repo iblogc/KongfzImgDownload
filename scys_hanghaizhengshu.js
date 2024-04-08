@@ -129,10 +129,10 @@
                                 'X-Token': userToken
                             },
                             onload: function (imageResponse) {
-                                console.log('获取图片成功:', imageResponse.responseText);
+                                console.log('获取图片结果:', imageResponse.responseText);
                                 var imageData = JSON.parse(imageResponse.responseText).data;
                                 if (imageData == null) {
-                                    alert('获取数据异常，请检查输入的生财编号是否正确。');
+                                    alert('获取数据异常，请检查输入的生财编号是否正确，或确认此编号是否有参加此航海。');
                                     return;
                                 }
                                 // 解析获取到的图片 URL
@@ -190,7 +190,11 @@
                                             'X-Token': userToken
                                         },
                                         onload: function (certResponse) {
-                                            console.log('获取逐天证书成功:', certResponse.responseText);
+                                            console.log('获取逐天证书结果:', certResponse.responseText);
+                                            if (JSON.parse(certResponse.responseText).data == null) {
+                                                alert('获取数据异常，你可能想获取别人的航海证书，而你自己又没参加过这个航海，如果是这样请看脚本说明。');
+                                                return;
+                                            }
                                             // 取出数据并将数组倒序排列
                                             var stageIds = JSON.parse(certResponse.responseText).data.project;
                                             var days = []
