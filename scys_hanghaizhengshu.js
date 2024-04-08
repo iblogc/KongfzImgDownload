@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         生财有术航海实战证书获取-路人甲乙丙
 // @namespace    iblogc
-// @version      0.7
-// @description  何以生财，唯有实战。（问题反馈联系微信Byte4Me）
+// @version      0.8
+// @description  支持获取参与过的所有历史航海的证书，以及其他人的证书（生财团队未修复前😀） 何以生财，唯有实战。（问题反馈联系微信Byte4Me）
 // @author       路人甲乙丙
 // @match        https://scys.com/*
 // @match        https://scys.com/mobile/activity/landing?activity_id=*
@@ -67,12 +67,22 @@
                 // 获取当前页面中的id
                 var urlParams = new URLSearchParams(window.location.search);
                 var activityId = urlParams.get('id');
+                if (activityId == null) {
+                    activityId = urlParams.get('activity_id');
+                }
                 // 如果activityId为null，则结束脚本运行，并弹出提示
                 if(activityId === null || !(window.location.href.startsWith('https://scys.com/mobile/activity/landing') || window.location.href.startsWith('https://scys.com/activity/landing'))) {
                     alert('请进入航海实战页面后再点击获取');
                     return;
                 }
                 console.log('当前页面中的activity_id为:', activityId);
+
+                // 用户输入 userid
+                var inputUserId = prompt('请输入生财编号（默认为当前登录用户生财编号）:', userId);
+                if (inputUserId === null) {
+                    return; // 用户取消输入
+                }
+                var userIdToUse = inputUserId.trim() || userId; // 使用用户输入的 userId，如果为空则使用解析出的 userId
 
                 // 构造请求体
                 var requestBody = {
@@ -110,7 +120,7 @@
                         console.log('从响应数据中获取的stage_id为:', stageId);
 
                         // 构建获取图片的请求
-                        var getImageURL = `https://scys.com/search/activity/project/submit/poster?id=${activityId}&number=${userId}&stage=${stageId}`;
+                        var getImageURL = `https://scys.com/search/activity/project/submit/poster?id=${activityId}&number=${userIdToUse}&stage=${stageId}`;
 
                         // 发送获取图片的请求
                         GM_xmlhttpRequest({
