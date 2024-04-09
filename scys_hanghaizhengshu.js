@@ -2,7 +2,7 @@
 // @name         生财有术航海实战证书获取-路人甲乙丙
 // @namespace    iblogc
 // @version      1.2
-// @description  支持获取参与过的所有历史航海的证书，以及其他人的证书（生财团队未修复前😀）。获取其他人证书时，如果那个航海你也有参数，可直接点击获取每天证书，如果那个航海没参数点击按钮只能获取最新证书（要获取每天的证书需要根据最新的stage_id来修改脚本里的stage_id参数，太麻烦又没多大意义，所以脚本不实现了），何以生财，唯有实战。（问题反馈联系微信Byte4Me）
+// @description  支持获取自己或其它人参与过的所有历史航海的每天证书（问题反馈联系微信Byte4Me）
 // @author       路人甲乙丙
 // @match        *://scys.com/*
 // @license      Apache License, Version 2.0

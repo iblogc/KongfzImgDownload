@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         孔夫子旧书网图片下载（自动去水印）-路人甲乙丙
-// @description  何以生财，唯有实战。（问题反馈联系微信Byte4Me）
+// @description  何以生财，唯有实战（问题反馈联系微信Byte4Me）
 // @version      2.8
 // @author       路人甲乙丙
 // @namespace    iblogc
