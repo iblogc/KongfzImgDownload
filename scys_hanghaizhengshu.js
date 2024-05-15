@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         生财有术航海实战证书获取-路人甲乙丙
 // @namespace    iblogc
-// @version      1.2
+// @version      1.3
 // @description  支持获取自己或其它人参与过的所有历史航海的每天证书（问题反馈联系微信Byte4Me）
 // @author       路人甲乙丙
 // @match        *://scys.com/*

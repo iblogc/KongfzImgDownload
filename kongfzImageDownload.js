@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         孔夫子旧书网图片下载（自动去水印）-路人甲乙丙
 // @description  何以生财，唯有实战。（问题反馈联系微信Byte4Me）
-// @version      3.0
+// @version      3.1
 // @author       路人甲乙丙
 // @namespace    iblogc
-// @match        *://search.kongfz.com/product_result/*
+// @match        *://search.kongfz.com/*
 // @match        *://book.kongfz.com/*
 // @match        *://item.kongfz.com/book/*
 // @grant        GM_addStyle
@@ -58,12 +58,12 @@
     function createSearchPageDownloadButton(doc, item) {
         const downloadButton = doc.createElement('button');
         downloadButton.innerText = '👉 下载图片';
-        downloadButton.className = 'searchPageDownloadButton';
+        downloadButton.className = 'searchPageDownloadButton item-button';
         downloadButton.style.backgroundColor = '#026052';
         downloadButton.style.color = 'white';
-        const addCartBtn = item.querySelector('div.add-cart-btn');
-        addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn);
-        return downloadButton
+        const addCartBtn = item.querySelector('div.add-cart-button');
+        addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn.nextSibling);
+        return downloadButton;
     }
 
     function createBookListPageDownloadButton(doc, item) {
@@ -74,7 +74,7 @@
         downloadButton.style.color = 'white';
         const addCartBtn = item.querySelector('a.con-btn-cart');
         addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn.nextSibling);
-        return downloadButton
+        return downloadButton;
     }
 
     function handleDownloadButtonClick(document, downloadButton) {
@@ -202,25 +202,26 @@
     }
 
     function handleSearchPageItemClick(item) {
-        const titleLink = item.querySelector('.item-info > .title > a');
+        const titleLink = item.querySelector('.item-info-box > .item-name > a.item-link');
         const bookPageUrl = titleLink.href;
-        const downloadButton = createSearchPageDownloadButton(document, item)
-        extractImagesFromBookPageUrl(bookPageUrl, downloadButton)
+        const downloadButton = createSearchPageDownloadButton(document, item);
+        extractImagesFromBookPageUrl(bookPageUrl, downloadButton);
     }
 
     function handleBookListPageItemClick(item) {
         const titleLink = item.querySelector('div.list-con-title > a');
         const bookPageUrl = titleLink.href;
-        const downloadButton = createBookListPageDownloadButton(document, item)
-        extractImagesFromBookPageUrl(bookPageUrl, downloadButton)
+        const downloadButton = createBookListPageDownloadButton(document, item);
+        extractImagesFromBookPageUrl(bookPageUrl, downloadButton);
     }
 
     let intervalId;
+
     function handleSearchPage() {
-        const listBox = document.querySelector('#listBox');
+        const listBox = document.querySelector('.product-item-box');
         if (listBox) {
             clearInterval(intervalId);
-            const items = document.querySelectorAll('#listBox .item');
+            const items = document.querySelectorAll('.product-item-box .product-item-wrap');
             items.forEach(item => {
                 handleSearchPageItemClick(item);
             });
@@ -239,7 +240,7 @@
     }
 
     if (!firstExecution) {
-        alert("孔夫子旧书网图片下载（自动去水印）：\n紧急修复因孔夫子网站升级导致的下载图片报错问题，现在可正常使用，如还有问题请加微信 Byte4Me 反馈");
+        alert("孔夫子旧书网图片下载（自动去水印）：\n紧急修复因孔夫子网站升级导致的下载图片报错及搜索结果页无下载按钮问题，现可正常使用，如还有问题请加微信 Byte4Me 反馈");
         markFirstExecution();
     }
 
@@ -247,8 +248,8 @@
         console.log('//book.kongfz.com/');
         const downloadButton = createBookPageDownloadButton(extractImagesFromBookPage(document));
         downloadButton.addEventListener('click', () => handleDownloadButtonClick(document, downloadButton));
-    } else if (currentPath.includes('//search.kongfz.com/product_result/')) {
-        console.log('//search.kongfz.com/product_result/');
+    } else if (currentPath.includes('//search.kongfz.com/')) {
+        console.log('//search.kongfz.com/');
         intervalId = setInterval(handleSearchPage, 1000);
     } else if (currentPath.includes('//item.kongfz.com/book/')) {
         console.log('//item.kongfz.com/book/');
