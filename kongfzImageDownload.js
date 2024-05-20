@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         孔夫子旧书网图片下载（自动去水印）-路人甲乙丙
 // @description  何以生财，唯有实战。（问题反馈联系微信Byte4Me）
-// @version      3.1
+// @version      3.2
 // @author       路人甲乙丙
 // @namespace    iblogc
 // @match        *://search.kongfz.com/*
 // @match        *://book.kongfz.com/*
 // @match        *://item.kongfz.com/book/*
+// @match        *://book.kongfz.com/C*
 // @grant        GM_addStyle
 // @grant        GM_download
 // @grant        GM_xmlhttpRequest
@@ -62,6 +63,17 @@
         downloadButton.style.backgroundColor = '#026052';
         downloadButton.style.color = 'white';
         const addCartBtn = item.querySelector('div.add-cart-button');
+        addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn.nextSibling);
+        return downloadButton;
+    }
+
+    function createCategoryPageDownloadButton(doc, item) {
+        const downloadButton = doc.createElement('button');
+        downloadButton.innerText = '👉 下载图片';
+        downloadButton.className = 'searchPageDownloadButton item-button';
+        downloadButton.style.backgroundColor = '#026052';
+        downloadButton.style.color = 'white';
+        const addCartBtn = item.querySelector('div.add-cart-btn');
         addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn.nextSibling);
         return downloadButton;
     }
@@ -208,6 +220,13 @@
         extractImagesFromBookPageUrl(bookPageUrl, downloadButton);
     }
 
+    function handleCategoryPageItemClick(item) {
+        const titleLink = item.querySelector('.item-info > .title > a.link');
+        const bookPageUrl = titleLink.href;
+        const downloadButton = createCategoryPageDownloadButton(document, item);
+        extractImagesFromBookPageUrl(bookPageUrl, downloadButton);
+    }
+
     function handleBookListPageItemClick(item) {
         const titleLink = item.querySelector('div.list-con-title > a');
         const bookPageUrl = titleLink.href;
@@ -221,9 +240,20 @@
         const listBox = document.querySelector('.product-item-box');
         if (listBox) {
             clearInterval(intervalId);
-            const items = document.querySelectorAll('.product-item-box .product-item-wrap');
+            const items = document.querySelectorAll('.product-item-box > .product-item-wrap');
             items.forEach(item => {
                 handleSearchPageItemClick(item);
+            });
+        }
+    }
+
+    function handleCategoryPage() {
+        const listBox = document.querySelector('#listBox');
+        if (listBox) {
+            clearInterval(intervalId);
+            const items = document.querySelectorAll('#listBox > .item');
+            items.forEach(item => {
+                handleCategoryPageItemClick(item);
             });
         }
     }
@@ -243,14 +273,16 @@
         alert("孔夫子旧书网图片下载（自动去水印）：\n紧急修复因孔夫子网站升级导致的下载图片报错及搜索结果页无下载按钮问题，现可正常使用，如还有问题请加微信 Byte4Me 反馈");
         markFirstExecution();
     }
-
-    if (currentPath.includes('//book.kongfz.com/')) {
+    if (currentPath.includes('//search.kongfz.com/')) {
+        console.log('//search.kongfz.com/');
+        intervalId = setInterval(handleSearchPage, 1000);
+    } else if (currentPath.includes('//book.kongfz.com/C')) {
+        console.log('//book.kongfz.com/C');
+        intervalId = setInterval(handleCategoryPage, 1000);
+    } else if (currentPath.includes('//book.kongfz.com/')) {
         console.log('//book.kongfz.com/');
         const downloadButton = createBookPageDownloadButton(extractImagesFromBookPage(document));
         downloadButton.addEventListener('click', () => handleDownloadButtonClick(document, downloadButton));
-    } else if (currentPath.includes('//search.kongfz.com/')) {
-        console.log('//search.kongfz.com/');
-        intervalId = setInterval(handleSearchPage, 1000);
     } else if (currentPath.includes('//item.kongfz.com/book/')) {
         console.log('//item.kongfz.com/book/');
         intervalId = setInterval(handleBookListPage, 1000);
