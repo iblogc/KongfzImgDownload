@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         孔夫子旧书网图片下载（自动去水印）-路人甲乙丙
+// @name         beta-孔夫子旧书网图片下载（自动去水印）-路人甲乙丙
 // @description  何以生财，唯有实战。（问题反馈联系微信Byte4Me）
-// @version      3.2
+// @version      3.3
 // @author       路人甲乙丙
 // @namespace    iblogc
 // @match        *://search.kongfz.com/*
@@ -43,7 +43,7 @@
     }
 
     function removeWatermarkFromHref(href) {
-        return href.replace(/(_water|_n|_p|_b)/g, '');
+        return href.replace(/(_water|_n|_p|_b|_s)/g, '');
     }
 
     function createBookPageDownloadButton(images) {
@@ -62,7 +62,7 @@
         downloadButton.className = 'searchPageDownloadButton item-button';
         downloadButton.style.backgroundColor = '#026052';
         downloadButton.style.color = 'white';
-        const addCartBtn = item.querySelector('div.add-cart-button');
+        const addCartBtn = item.querySelector('div.add-cart-btn') || item.querySelector('div.add-cart-button');
         addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn.nextSibling);
         return downloadButton;
     }
@@ -73,7 +73,7 @@
         downloadButton.className = 'searchPageDownloadButton item-button';
         downloadButton.style.backgroundColor = '#026052';
         downloadButton.style.color = 'white';
-        const addCartBtn = item.querySelector('div.add-cart-btn');
+        const addCartBtn = item.querySelector('div.add-cart-btn') || item.querySelector('div.add-cart-button');
         addCartBtn.parentNode.insertBefore(downloadButton, addCartBtn.nextSibling);
         return downloadButton;
     }
@@ -122,13 +122,14 @@
         images.forEach((imageUrl, index) => {
             const extension = (imageUrl.split('.').pop() || '').toLowerCase();
             const imageName = `${bookName.trim()}-${isbn.trim()}-${index + 1}.${extension || 'jpg'}`;
+            console.log('Image download ' + imageName + ': ' + imageUrl)
 
             GM_download({
                 url: imageUrl,
                 name: imageName,
                 onload: () => {
                     successCount++;
-                    console.log('Image downloaded:', imageUrl);
+                    console.log('Downloading:', imageUrl);
                     downloadButton.innerText = `Downloading...(${successCount}/${images.length})`;
                     if (successCount === images.length) {
                         updateDownloadCount(downloadCount + images.length); // 更新下载计数
