@@ -162,12 +162,12 @@
         donationPopup.innerHTML = `
       <div class="donation-popup">
         <p class="donation-text">孔夫子旧书网图片下载（自动去水印）------“时间就是金钱”</p>
-        <div class="donation-text">非常开心您选择此工具，考虑捐赠以帮助我们继续改进此工具🙏</div>
+        <div class="donation-text">非常开心您选择此工具，考虑捐赠以鼓励我继续维护和改进此工具🙏</div>
         <div class="donation-images">
           <img src="https://greasyfork.s3.us-east-2.amazonaws.com/1ohv6vh4i7r7bdx3pe9zkmtfqdcz" alt="捐赠二维码1" />
           <img src="https://greasyfork.s3.us-east-2.amazonaws.com/5f4nlsf3mhtrps0x3dm2tpnj0k54" alt="捐赠二维码2" />
         </div>
-        <div style="text-align:center"><a href="https://img2.imgtp.com/2024/04/22/4VBKbl7W.png" target="_blank">微信:Byte4Me</a></div>
+        <div style="text-align:center"><a href="https://greasyfork.s3.us-east-2.amazonaws.com/lp9hdyffstt0wpz2ub39gw9p6srr" target="_blank">微信:Byte4Me</a></div>
         <br />
         <div class="donation-buttons">
           <button id="donateBtn">我已捐赠💖</button>
