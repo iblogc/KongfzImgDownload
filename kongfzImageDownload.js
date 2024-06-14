@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         beta-孔夫子旧书网图片下载（自动去水印）-路人甲乙丙
 // @description  何以生财，唯有实战。（问题反馈联系微信Byte4Me）
-// @version      3.3
+// @version      3.4
 // @author       路人甲乙丙
 // @namespace    iblogc
 // @match        *://search.kongfz.com/*
@@ -22,7 +22,7 @@
 
     const STORAGE_KEY = 'downloadCount';
     const DONATION_POPUP_SHOWN_KEY = 'donationPopupShown';
-    const FIRST_EXECUTION_KEY = 'firstExecution';
+    const FIRST_EXECUTION_KEY = 'firstExecutionv34';
     let downloadCount = parseInt(localStorage.getItem(STORAGE_KEY)) || 0;
     let donationPopupShown = localStorage.getItem(DONATION_POPUP_SHOWN_KEY) === 'true';
     let firstExecution = localStorage.getItem(FIRST_EXECUTION_KEY) === 'true';
@@ -95,7 +95,7 @@
 
     function extractImagesFromBookPage(doc) {
         const liElements = doc.querySelectorAll('ul#figure-info-box > li');
-        return Array.from(liElements, liElement => removeWatermarkFromHref(liElement.querySelector('img').src));
+        return Array.from(liElements, liElement => removeWatermarkFromHref(liElement.querySelector('img').getAttribute('_viewsrc')));
     }
 
     // 解析网页下载图片
@@ -271,7 +271,7 @@
     }
 
     if (!firstExecution) {
-        alert("孔夫子旧书网图片下载（自动去水印）：\n紧急修复因孔夫子网站升级导致的下载图片报错及搜索结果页无下载按钮问题，现可正常使用，如还有问题请加微信 Byte4Me 反馈");
+        alert("孔夫子旧书网图片下载（自动去水印）v3.4：修复列表页下载图片部分图片下载出错的问题");
         markFirstExecution();
     }
     if (currentPath.includes('//search.kongfz.com/')) {
