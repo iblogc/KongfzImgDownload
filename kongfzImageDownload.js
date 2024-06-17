@@ -95,17 +95,25 @@
 
     function extractImagesFromBookPage(doc) {
         const liElements = doc.querySelectorAll('ul#figure-info-box > li');
-        return Array.from(liElements, liElement => removeWatermarkFromHref(liElement.querySelector('img').getAttribute('_viewsrc')));
+        return Array.from(liElements, liElement => removeWatermarkFromHref(liElement.querySelector('img').getAttribute("_viewsrc")));
     }
 
     // 解析网页下载图片
     function extractImagesAndDownFromWebPage(doc, downloadButton) {
         const images = extractImagesFromBookPage(doc);
+        downloadButton.style.cursor = 'not-allowed';
+        var bugReportLink = document.createElement('a');
+        bugReportLink.href = 'https://greasyfork.s3.us-east-2.amazonaws.com/lp9hdyffstt0wpz2ub39gw9p6srr';
+        bugReportLink.target = '_blank';
+        bugReportLink.textContent = '🐛问题反馈';
+        bugReportLink.style.color = '#ffeb83';
+
         if (images.length === 0) {
-            downloadButton.innerText = '🧐 商品详情中没有图片可以下载';
+            downloadButton.innerText = '🧐商品详情中没\n有图片可以下载\n';
             downloadButton.style.backgroundColor = '#ccc';
             downloadButton.style.color = '#999';
-            downloadButton.style.cursor = 'not-allowed';
+            bugReportLink.style.color = '#b55222';
+            downloadButton.appendChild(bugReportLink);
             return;
         }
 
@@ -119,34 +127,54 @@
         const bookName = bookNameContent && bookNameContent.length > 1 ? bookNameContent[1] : '';
         const isbnContent = (doc.querySelector('meta[name="description"]').getAttribute('content') || '').match(/ISBN：([0-9]*)/);
         const isbn = isbnContent && isbnContent.length > 1 ? isbnContent[1] : '';
+
         images.forEach((imageUrl, index) => {
             const extension = (imageUrl.split('.').pop() || '').toLowerCase();
             const imageName = `${bookName.trim()}-${isbn.trim()}-${index + 1}.${extension || 'jpg'}`;
             console.log('Image download ' + imageName + ': ' + imageUrl)
-
             GM_download({
                 url: imageUrl,
                 name: imageName,
+                onprogress :  (event) => {
+                    // console.log(`Downloaded ${event.loaded} of ${event.total}`);
+                    downloadButton.innerText = `Downloading...(${index + 1}/${images.length})`;
+                  },
                 onload: () => {
                     successCount++;
-                    console.log('Downloading:', imageUrl);
-                    downloadButton.innerText = `Downloading...(${successCount}/${images.length})`;
+                    // downloadButton.innerText = `Downloading...(${index + 1}/${images.length})`;
                     if (successCount === images.length) {
                         updateDownloadCount(downloadCount + images.length); // 更新下载计数
                         if ((downloadCount % 100 === 0 && downloadCount !== 0 && !donationPopupShown) || (downloadCount > 1000 && !donationPopupShown)) {
                             showDonationPopup();
                         }
-                        downloadButton.innerText = `🎉 ${successCount} 张图片下载成功`;
-                        downloadButton.style.backgroundColor = '#ccc';
-                        downloadButton.style.color = '#999';
-                        downloadButton.style.cursor = 'not-allowed';
+                        
+                    }
+                    if (successCount + failCount === images.length) {
+                        downloadButton.style.lineHeight = '20px';
+                        downloadButton.innerText = `📢总计：${images.length}\n🥳成功：${successCount}\n😭失败：${failCount}\n`;
+                        downloadButton.appendChild(bugReportLink);
+                        if (failCount > 0) {
+                            downloadButton.style.backgroundColor = '#ef8f87';
+                        } else {
+                            downloadButton.style.backgroundColor = '#6eb76c';
+                        }
                     }
                 },
                 onerror: error => {
                     failCount++;
                     console.log('Error downloading image:', error);
-                    downloadButton.innerText = `⛔ 下载图片时发生错误${failCount}`;
-                    alert("下载图片发生错误，请联系微信：Byte4Me");
+                    if (successCount + failCount === images.length) {
+                        downloadButton.style.lineHeight = '20px';
+                        downloadButton.innerText = `📢总计：${images.length}\n🥳成功：${successCount}\n😭失败：${failCount}\n`;
+                        downloadButton.appendChild(bugReportLink);
+                        if (failCount > 0) {
+                            downloadButton.style.backgroundColor = '#f5675b';
+                            downloadButton.style.color = '#fff';
+                        } else {
+                            downloadButton.style.backgroundColor = '#06b500';
+                            downloadButton.style.color = '#fff';
+                        }
+                    }
                 }
             });
         });
@@ -162,12 +190,12 @@
         donationPopup.innerHTML = `
       <div class="donation-popup">
         <p class="donation-text">孔夫子旧书网图片下载（自动去水印）------“时间就是金钱”</p>
-        <div class="donation-text">非常开心您选择此工具，考虑捐赠以鼓励我继续维护和改进此工具🙏</div>
+        <div class="donation-text">非常感谢您选择此工具，考虑捐赠以鼓励我继续维护和改进此工具🙏</div>
         <div class="donation-images">
           <img src="https://greasyfork.s3.us-east-2.amazonaws.com/1ohv6vh4i7r7bdx3pe9zkmtfqdcz" alt="捐赠二维码1" />
           <img src="https://greasyfork.s3.us-east-2.amazonaws.com/5f4nlsf3mhtrps0x3dm2tpnj0k54" alt="捐赠二维码2" />
         </div>
-        <div style="text-align:center"><a href="https://greasyfork.s3.us-east-2.amazonaws.com/lp9hdyffstt0wpz2ub39gw9p6srr" target="_blank">微信:Byte4Me</a></div>
+        <div style="text-align:center"><a href="https://greasyfork.s3.us-east-2.amazonaws.com/lp9hdyffstt0wpz2ub39gw9p6srr" target="_blank">问题/建议反馈微信:Byte4Me</a></div>
         <br />
         <div class="donation-buttons">
           <button id="donateBtn">我已捐赠💖</button>
@@ -271,7 +299,7 @@
     }
 
     if (!firstExecution) {
-        alert("孔夫子旧书网图片下载（自动去水印）v3.4：修复列表页下载图片部分图片下载出错的问题");
+        alert("v3.4 孔夫子旧书网图片下载（自动去水印）：\n1. 修复列表页下载图片部分图片下载出错的问题；\n2. 分类页面增加一键下载功能；\n3. 优化下载失败交互和下载结束后的UI；");
         markFirstExecution();
     }
     if (currentPath.includes('//search.kongfz.com/')) {
@@ -293,6 +321,18 @@
   #downloadButton {
   position: fixed;
   bottom: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 9999;
+  }
+  #bugReportLink {
+  position: fixed;
+  bottom: 5px;
   right: 20px;
   padding: 10px 20px;
   background-color: #333;
