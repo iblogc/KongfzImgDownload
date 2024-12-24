@@ -22,7 +22,7 @@
 
   const STORAGE_KEY = 'downloadCount'
   const DONATION_POPUP_SHOWN_KEY = 'donationPopupShown'
-  const FIRST_EXECUTION_KEY = 'firstExecutionv36'
+  const FIRST_EXECUTION_KEY = 'firstExecutionv40'
   let downloadCount = parseInt(localStorage.getItem(STORAGE_KEY)) || 0
   let donationPopupShown = localStorage.getItem(DONATION_POPUP_SHOWN_KEY) === 'true'
   let firstExecution = localStorage.getItem(FIRST_EXECUTION_KEY) === 'true'
@@ -136,10 +136,13 @@
 
         // 获取右下角最角落的颜色值（采样5x5像素区域）
         const sampleSize = 5
-        let rSum = 0, gSum = 0, bSum = 0, count = 0
-        
-        for(let sx = x + watermarkWidth - sampleSize; sx < x + watermarkWidth; sx++) {
-          for(let sy = y + watermarkHeight - sampleSize; sy < y + watermarkHeight; sy++) {
+        let rSum = 0,
+          gSum = 0,
+          bSum = 0,
+          count = 0
+
+        for (let sx = x + watermarkWidth - sampleSize; sx < x + watermarkWidth; sx++) {
+          for (let sy = y + watermarkHeight - sampleSize; sy < y + watermarkHeight; sy++) {
             const pixel = ctx.getImageData(sx, sy, 1, 1).data
             rSum += pixel[0]
             gSum += pixel[1]
@@ -160,10 +163,10 @@
         // 对水印区域进行处理
         for (let i = 0; i < pixels.length; i += 4) {
           // 使用采样的颜色值，并添加轻微的随机变化使效果更自然
-          pixels[i] = avgR + (Math.random() - 0.5) * 10     // R
+          pixels[i] = avgR + (Math.random() - 0.5) * 10 // R
           pixels[i + 1] = avgG + (Math.random() - 0.5) * 10 // G
           pixels[i + 2] = avgB + (Math.random() - 0.5) * 10 // B
-          pixels[i + 3] = 245  // Alpha (透明度)
+          pixels[i + 3] = 245 // Alpha (透明度)
         }
 
         // 将处理后的图像数据放回画布
@@ -173,7 +176,7 @@
         ctx.filter = 'blur(2px)'
         ctx.fillStyle = `rgba(${avgR}, ${avgG}, ${avgB}, 0.3)`
         ctx.fillRect(x, y, watermarkWidth, watermarkHeight)
-        ctx.filter = 'none'  // 重置滤镜
+        ctx.filter = 'none' // 重置滤镜
 
         // 转换为blob
         canvas.toBlob(
@@ -222,10 +225,10 @@
     downloadButton.disabled = true
     downloadButton.innerText = 'Downloading...'
 
-    let directSuccessCount = 0  // 直接去水印成功数量
-    let canvasSuccessCount = 0  // Canvas处理成功数量
-    let originalImageCount = 0   // 原图下载数量
-    let failCount = 0           // 下载失败数量
+    let directSuccessCount = 0 // 直接去水印成功数量
+    let canvasSuccessCount = 0 // Canvas处理成功数量
+    let originalImageCount = 0 // 原图下载数量
+    let failCount = 0 // 下载失败数量
 
     const bookNameContent = (doc.querySelector('meta[name="keywords"]').getAttribute('content') || '').match(/([^,]+)/)
     const bookName = bookNameContent && bookNameContent.length > 1 ? bookNameContent[1] : ''
@@ -333,12 +336,13 @@
 
     function updateDownloadButton() {
       downloadButton.style.lineHeight = '20px'
-      downloadButton.innerText = `📢总计：${images.length}\n` +
-                               `✨去水印一：${directSuccessCount}\n` +
-                               `🎨去水印二：${canvasSuccessCount}\n` +
-                               `🔄未去水印：${originalImageCount}\n` +
-                               `😭下载失败：${failCount}\n`
-      
+      downloadButton.innerText =
+        `📢总计：${images.length}\n` +
+        `✨去水印一：${directSuccessCount}\n` +
+        `🎨去水印二：${canvasSuccessCount}\n` +
+        `🔄未去水印：${originalImageCount}\n` +
+        `😭下载失败：${failCount}\n`
+
       downloadButton.appendChild(bugReportLink)
       if (failCount > 0) {
         downloadButton.style.backgroundColor = '#c97c75'
@@ -351,6 +355,8 @@
   }
 
   function showDonationPopup() {
+    // 播放彩带效果
+    createConfetti()
     const overlay = document.createElement('div')
     overlay.classList.add('overlay')
     document.body.appendChild(overlay)
@@ -522,6 +528,8 @@
   }
 
   function showUpdateLogPopup() {
+    // 播放彩带效果
+    createConfetti()
     const overlay = document.createElement('div')
     overlay.classList.add('overlay')
     document.body.appendChild(overlay)
@@ -531,10 +539,18 @@
     updateLogPopup.innerHTML = `
               <div class="update-log-header">
                   <p><a target="_blank" href="https://greasyfork.org/zh-CN/scripts/467062-%E5%AD%94%E5%A4%AB%E5%AD%90%E6%97%A7%E4%B9%A6%E7%BD%91%E5%9B%BE%E7%89%87%E4%B8%8B%E8%BD%BD-%E8%87%AA%E5%8A%A8%E5%8E%BB%E6%B0%B4%E5%8D%B0-%E8%B7%AF%E4%BA%BA%E7%94%B2%E4%B9%99%E4%B8%99">孔夫子旧书网图片下载（自动去水印）更新日志</a></p>
-                  <div style="font-size: 12px; color: #666; text-align: center;">每次更新后此窗口会显示两次</div>
+                  <div style="font-size: 12px; color: #666; text-align: center;">每次升级后此窗口可能会展示多次</div>
               </div>
               <div class="update-log-body">
                   <ul>
+                  <li>
+                          <div style="display: flex; align-items: center; justify-content: center;">🎄圣诞快乐🎄</div>
+                          <p style="font-weight: bold;">[2024-12-25] v4.0</p>
+                          <ul>
+                              <li style="color: red;">1. 新增 Canvas 去水印，去水印成功率 99.9999999% 以上</li>
+                              <li style="color: red;">2. 修改按钮和消息展示样式。</li>
+                          </ul>
+                      </li>
                       <li>
                           <p style="font-weight: bold;">[2024-12-23] v3.6</p>
                           <ul>
@@ -550,9 +566,9 @@
                       <li>
                           <p style="font-weight: bold;">[2024-06-21] v3.4</p>
                           <ul>
-                              <li>修复列表页下载图片部分下载出错的问题。</li>
-                              <li>分类页面增加一键下载功能。</li>
-                              <li>优化下载失败交互和下载结束后的 UI。</li>
+                              <li>1. 修复列表页下载图片部分下载出错的问题。</li>
+                              <li>2. 分类页面增加一键下载功能。</li>
+                              <li>3. 优化下载失败交互和下载结束后的 UI。</li>
                           </ul>
                       </li>
                       <li>
@@ -576,11 +592,11 @@
                   </ul>
                   <p style="text-align: center; margin-top: 10px;">
                       <a href="#" id="donation" style="color: #007bff; text-decoration: none;">
-                          好活，当赏
+                          💰 好活，当赏
                       </a>
                       &nbsp;|&nbsp;
                       <a href="#" id="scyspromotion" style="color: #007bff; text-decoration: none;">
-                          生财有术（副业社群）免费体检卡
+                          💵 生财有术（副业社群）免费体检卡
                       </a>
                   </p>
               </div>
@@ -809,7 +825,7 @@
       padding-left: 20px;
   }
   .update-log-body li {
-      margin-bottom: 10px;
+      margin-bottom: 2px;
   }
   .update-log-footer {
       margin-top: 20px;
@@ -829,4 +845,175 @@
   }
   
     `)
+
+  function createSingleFirework(container) {
+    const firework = document.createElement('div')
+    firework.className = 'firework'
+
+    // 随机位置，但避免太靠边
+    const left = 20 + Math.random() * 60 // 在20%-80%的范围内
+    const bottom = 30 + Math.random() * 40 // 在30%-70%的范围内
+    firework.style.left = `${left}%`
+    firework.style.bottom = `${bottom}%`
+
+    container.appendChild(firework)
+
+    // 增加粒子数量
+    for (let i = 0; i < 20; i++) {
+      const particle = document.createElement('div')
+      particle.className = 'particle'
+      // 随机颜色
+      particle.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`
+      firework.appendChild(particle)
+    }
+
+    // 动画结束后移除
+    setTimeout(() => {
+      firework.remove()
+    }, 4000)
+  }
+
+  // 更新烟花效果的样式
+  GM_addStyle(`
+    .fireworks-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .firework {
+      position: absolute;
+      transform: scale(1);
+      animation: scale 0.3s ease-out forwards;
+    }
+
+    .particle {
+      position: absolute;
+      width: 6px;  // 增大粒子尺寸
+      height: 6px;
+      border-radius: 50%;
+      animation: explode 1.5s ease-out forwards;
+      box-shadow: 0 0 10px 2px currentColor;  // 添加发光效果
+    }
+
+    @keyframes scale {
+      from {
+        transform: scale(0);
+      }
+      50% {
+        transform: scale(1.2);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes explode {
+      0% {
+        transform: translateX(0) translateY(0);
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.8;
+      }
+      100% {
+        transform: translateX(var(--x)) translateY(var(--y));
+        opacity: 0;
+      }
+    }
+  `)
+
+  // 更新粒子轨迹生成
+  document.addEventListener('DOMContentLoaded', () => {
+    const style = document.createElement('style')
+    let css = ''
+
+    // 为每个粒子生成随机轨迹
+    for (let i = 0; i < 20; i++) {
+      const angle = i * 18 + (Math.random() * 20 - 10) // 更均匀的角度分布
+      const distance = 100 + Math.random() * 50 // 更大的扩散范围
+      const x = Math.cos((angle * Math.PI) / 180) * distance
+      const y = Math.sin((angle * Math.PI) / 180) * distance
+      css += `.firework .particle:nth-child(${i + 1}) { --x: ${x}px; --y: ${y}px; }\n`
+    }
+
+    style.textContent = css
+    document.head.appendChild(style)
+  })
+
+  // 添加彩带效果代码
+  function createConfetti() {
+    const confettiContainer = document.createElement('div')
+    confettiContainer.className = 'confetti-container'
+    document.body.appendChild(confettiContainer)
+
+    // 创建多个彩带
+    for (let i = 0; i < 50; i++) {
+      const confetti = document.createElement('div')
+      confetti.className = 'confetti'
+      confetti.style.left = Math.random() * 100 + 'vw'
+      confetti.style.animationDelay = Math.random() * 3 + 's'
+      confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`
+      confettiContainer.appendChild(confetti)
+    }
+
+    // 3秒后移除彩带容器
+    setTimeout(() => {
+      confettiContainer.remove()
+    }, 5000)
+  }
+
+  // 添加彩带样式
+  GM_addStyle(`
+    .confetti-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 20px;
+      top: -20px;
+      transform-origin: center;
+      animation: confetti-fall 3s ease-in-out forwards;
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        transform: translateY(0) rotate(0) scale(1);
+        opacity: 1;
+      }
+      
+      25% {
+        transform: translateY(25vh) rotate(90deg) scale(0.9);
+        opacity: 0.8;
+      }
+      
+      50% {
+        transform: translateY(50vh) rotate(180deg) scale(0.8);
+        opacity: 0.6;
+      }
+      
+      75% {
+        transform: translateY(75vh) rotate(270deg) scale(0.7);
+        opacity: 0.4;
+      }
+      
+      100% {
+        transform: translateY(100vh) rotate(360deg) scale(0.6);
+        opacity: 0;
+      }
+    }
+  `)
 })()
