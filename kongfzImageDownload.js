@@ -554,13 +554,13 @@
                       <li>
                           <p style="font-weight: bold;">[2024-12-23] v3.6</p>
                           <ul>
-                              <li style="color: red;">网站图片规则修改，去水印基本失效，在找到新方法前，去水印失败会自动降级到下载原图。</li>
+                              <li style="color: red;">1. 网站图片规则修改，去水印基本失效，在找到新方法前，去水印失败会自动降级到下载原图。</li>
                           </ul>
                       </li>
                       <li>
                           <p style="font-weight: bold;">[2024-07-31] v3.5</p>
                           <ul>
-                              <li>修复 https://item.kongfz.com/index.php? 前缀网页不显示下载按钮的问题。</li>
+                              <li>1. 修复 https://item.kongfz.com/index.php? 前缀网页不显示下载按钮的问题。</li>
                           </ul>
                       </li>
                       <li>
@@ -574,19 +574,19 @@
                       <li>
                           <p style="font-weight: bold;">[2024-05-23] v3.3</p>
                           <ul>
-                              <li>修复在某些场景下详情页下载的部分图片很模糊的问题。</li>
+                              <li>1. 修复在某些场景下详情页下载的部分图片很模糊的问题。</li>
                           </ul>
                       </li>
                       <li>
                           <p style="font-weight: bold;">[2024-05-15] v3.2</p>
                           <ul>
-                              <li>修复搜索结果页没有下载按钮的问题。</li>
+                              <li>1. 修复搜索结果页没有下载按钮的问题。</li>
                           </ul>
                       </li>
                       <li>
                           <p style="font-weight: bold;">[2024-05-15] v3.1</p>
                           <ul>
-                              <li>修复搜索结果页没有下载按钮的问题。</li>
+                              <li>1. 修复搜索结果页没有下载按钮的问题。</li>
                           </ul>
                       </li>
                   </ul>
