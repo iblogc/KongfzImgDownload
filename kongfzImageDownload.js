@@ -122,8 +122,10 @@
         ctx.drawImage(img, 0, 0)
 
         // 计算水印区域（右下角）
-        const watermarkWidth = img.width * 0.28 // 水印宽度约为图片宽度的30%
-        const watermarkHeight = img.height * 0.1 // 水印高度约为图片高度的10%
+        // const watermarkWidth = img.width * 0.28 // 水印宽度约为图片宽度的30%
+        // const watermarkHeight = img.height * 0.1 // 水印高度约为图片高度的10%
+        const watermarkWidth = 200 // 水印宽度约为图片宽度的30%
+        const watermarkHeight = 80 // 水印高度约为图片高度的10%
         const x = img.width - watermarkWidth
         const y = img.height - watermarkHeight
 
