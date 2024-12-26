@@ -11,12 +11,593 @@
 // @grant        GM_addStyle
 // @grant        GM_download
 // @grant        GM_xmlhttpRequest
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_registerMenuCommand
 // @license      Apache License, Version 2.0
-// @homepage     https://greasyfork.org/zh-CN/scripts/467062-%E5%AD%94%E5%A4%AB%E5%AD%90%E6%97%A7%E4%B9%A6%E7%BD%91%E5%9B%BE%E7%89%87%E4%B8%8B%E8%BD%BD-%E8%87%AA%E5%8A%A8%E5%8E%BB%E6%B0%B4%E5%8D%B0-%E8%B7%AF%E4%BA%BA%E7%94%B2%E4%B9%99%E4%B8%99
+// @homepage     https://greasyfork.org/zh-CN/scripts/467062
 // ==/UserScript==
 
 ;(function () {
   'use strict'
+
+  // 添加配置选项
+  const WATERMARK_REMOVAL_METHOD = {
+    CANVAS_COVER: 'canvas_cover',      // Canvas覆盖
+    CUSTOM_WATERMARK: 'custom_watermark', // 自定义水印
+    CROP_BOTTOM: 'crop_bottom'         // 裁剪底部
+  }
+
+  // 获取用户配置
+  let currentMethod = GM_getValue('watermarkRemovalMethod', WATERMARK_REMOVAL_METHOD.CANVAS_COVER)
+  let customWatermarkBase64 = GM_getValue('customWatermarkBase64', '')
+  let watermarkWidth = GM_getValue('watermarkWidth', 200)
+  let watermarkHeight = GM_getValue('watermarkHeight', 80)
+  let widthUnit = GM_getValue('widthUnit', 'px')
+  let heightUnit = GM_getValue('heightUnit', 'px')
+  let cropRatio = GM_getValue('cropRatio', 0.9)
+
+  // 注册菜单命令
+  GM_registerMenuCommand('⚙️ 去水印设置', showSettings)
+  GM_registerMenuCommand(`✨ 当前方式：${getMethodName(currentMethod)}`, switchMethod)
+
+  // 切换去水印方式
+  function switchMethod() {
+    const methods = Object.values(WATERMARK_REMOVAL_METHOD)
+    const currentIndex = methods.indexOf(currentMethod)
+    const nextIndex = (currentIndex + 1) % methods.length
+    const nextMethod = methods[nextIndex]
+    
+    if (nextMethod === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK && !customWatermarkBase64) {
+      alert('请先在设置面板中上传自定义水印图片')
+      showSettings()
+      return
+    }
+    
+    currentMethod = nextMethod
+    GM_setValue('watermarkRemovalMethod', nextMethod)
+    alert(`已切换为${getMethodName(nextMethod)}方式`)
+  }
+
+  // 获取方式名称
+  function getMethodName(method) {
+    switch (method) {
+      case WATERMARK_REMOVAL_METHOD.CANVAS_COVER:
+        return '纯色覆盖'
+      case WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK:
+        return '自定义水印覆盖'
+      case WATERMARK_REMOVAL_METHOD.CROP_BOTTOM:
+        return '裁剪底部'
+      default:
+        return '未设置'
+    }
+  }
+
+  // 创建设置面板
+  function createSettingsPanel() {
+    const panel = document.createElement('div')
+    panel.className = 'settings-panel'
+    panel.innerHTML = `
+      <div class="settings-header">
+        <h3>去水印备选方案设置</h3>
+        <button class="close-button">×</button>
+      </div>
+      <div class="settings-content">
+        <div class="settings-notice">
+          <div class="notice-icon">ⓘ</div>
+          <div class="notice-text">
+            系统会优先使用完美去水印方式，
+            仅在该方式失效时（目前失效率很高）才会使用以下备选方案
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="method-options">
+            <label class="method-radio">
+              <input type="radio" name="watermarkMethod" value="canvas_cover" 
+                     ${currentMethod === WATERMARK_REMOVAL_METHOD.CANVAS_COVER ? 'checked' : ''}>
+              <div class="method-radio-content">
+                <span class="method-title">纯色覆盖</span>
+                <span class="method-desc">采集右下角颜色</span>
+              </div>
+            </label>
+            <label class="method-radio">
+              <input type="radio" name="watermarkMethod" value="custom_watermark"
+                     ${currentMethod === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK ? 'checked' : ''}>
+              <div class="method-radio-content">
+                <span class="method-title">自定义水印</span>
+                <span class="method-desc">使用自定义图片</span>
+              </div>
+            </label>
+            <label class="method-radio">
+              <input type="radio" name="watermarkMethod" value="crop_bottom"
+                     ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'checked' : ''}>
+              <div class="method-radio-content">
+                <span class="method-title">裁剪底部</span>
+                <span class="method-desc">裁剪底部水印区域</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>水印区域尺寸</h4>
+          <div class="method-desc">建议宽:高=5:2，大部分图片使用 200像素 x 80像素可以覆盖大部分情况，裁剪底部时，一般使用 80 像素可以覆盖大部分情况</div>
+          <div class="size-inputs ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'crop-mode' : ''}">
+            <div class="size-input-wrapper" style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'none' : 'block'}">
+              <label>宽度：</label>
+              <div class="input-unit-wrapper">
+                <input type="text" id="watermarkWidth" value="${watermarkWidth}" 
+                       placeholder="宽度">
+                <select class="unit-select">
+                  <option value="px">像素</option>
+                  <option value="%">百分比</option>
+                </select>
+              </div>
+            </div>
+            <span class="size-separator" style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'none' : 'inline'}">×</span>
+            <div class="size-input-wrapper">
+              <label>高度：</label>
+              <div class="input-unit-wrapper">
+                <input type="text" id="watermarkHeight" value="${watermarkHeight}"
+                       placeholder="高度">
+                <select class="unit-select">
+                  <option value="px">像素</option>
+                  <option value="%">百分比</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="customWatermarkSection" class="settings-section" 
+             style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK ? 'block' : 'none'}">
+          <h4>自定义水印图片</h4>
+          <span class="method-desc">
+            建议宽:高=5:2，和水印区域尺寸比例不一致时，会自动缩放拉伸<br>
+            只有水印区域尺寸都是像素时，下面的预览比例才是准确的
+          </span>
+          <div class="file-upload">
+            <label class="file-upload-button" for="watermarkFile">
+              选择图片
+            </label>
+            <input type="file" id="watermarkFile" accept="image/*">
+          </div>
+          ${customWatermarkBase64 ? 
+            `<div class="preview-wrapper">
+               <img src="${customWatermarkBase64}" class="preview-image">
+             </div>` : ''}
+        </div>
+      </div>
+      <div class="settings-footer">
+        <button id="saveSettings" class="save-button">保存设置</button>
+      </div>
+    `
+    return panel
+  }
+
+  // 显示设置面板
+  function showSettings() {
+    const overlay = document.createElement('div')
+    overlay.className = 'settings-overlay'
+    document.body.appendChild(overlay)
+
+    const panel = createSettingsPanel()
+    document.body.appendChild(panel)
+
+    // 监听单选框变化
+    const radioInputs = panel.querySelectorAll('input[name="watermarkMethod"]')
+    radioInputs.forEach(input => {
+      input.addEventListener('change', () => {
+        const customSection = panel.querySelector('#customWatermarkSection')
+        customSection.style.display = 
+          input.value === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK ? 'block' : 'none'
+        
+        // 更新预览图片尺寸
+        if (input.value === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK) {
+          updatePreviewRatio()
+        }
+
+        // 更新尺寸输入显示
+        const sizeInputs = panel.querySelector('.size-inputs')
+        if (input.value === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM) {
+          sizeInputs.classList.add('crop-mode')
+          panel.querySelector('#watermarkWidth').parentElement.parentElement.style.display = 'none'
+          panel.querySelector('.size-separator').style.display = 'none'
+        } else {
+          sizeInputs.classList.remove('crop-mode')
+          panel.querySelector('#watermarkWidth').parentElement.parentElement.style.display = 'block'
+          panel.querySelector('.size-separator').style.display = 'inline'
+        }
+      })
+    })
+
+    // 监听尺寸和单位变化
+    const sizeInputs = panel.querySelectorAll('#watermarkWidth, #watermarkHeight')
+    const unitSelects = panel.querySelectorAll('.unit-select')
+    
+    const updateHandler = () => updatePreviewRatio()
+    
+    sizeInputs.forEach(input => {
+      input.addEventListener('input', updateHandler)
+      input.addEventListener('change', updateHandler)
+    })
+    
+    unitSelects.forEach(select => {
+      select.addEventListener('change', updateHandler)
+    })
+
+    // 绑定保存事件
+    panel.querySelector('#saveSettings').onclick = () => {
+      const selectedMethod = panel.querySelector('input[name="watermarkMethod"]:checked').value
+      const width = parseInt(panel.querySelector('#watermarkWidth').value) || watermarkWidth
+      const height = parseInt(panel.querySelector('#watermarkHeight').value) || watermarkHeight
+      const newWidthUnit = panel.querySelector('#watermarkWidth').nextElementSibling.value
+      const newHeightUnit = panel.querySelector('#watermarkHeight').nextElementSibling.value
+
+      currentMethod = selectedMethod
+      watermarkWidth = width
+      watermarkHeight = height
+      widthUnit = newWidthUnit
+      heightUnit = newHeightUnit
+
+      GM_setValue('watermarkRemovalMethod', selectedMethod)
+      GM_setValue('watermarkWidth', width)
+      GM_setValue('watermarkHeight', height)
+      GM_setValue('widthUnit', newWidthUnit)
+      GM_setValue('heightUnit', newHeightUnit)
+      GM_setValue('customWatermarkBase64', customWatermarkBase64)
+
+      alert('设置已保存')
+      panel.remove()
+      overlay.remove()
+    }
+
+    // 绑定事件
+    panel.querySelector('.close-button').onclick = () => {
+      panel.remove()
+      overlay.remove()
+    }
+
+    panel.querySelector('#watermarkFile').onchange = (e) => {
+      const file = e.target.files[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          customWatermarkBase64 = e.target.result
+          const preview = panel.querySelector('.preview-image')
+          if (preview) {
+            preview.src = customWatermarkBase64
+          } else {
+            const previewWrapper = document.createElement('div')
+            previewWrapper.className = 'preview-wrapper'
+            const img = document.createElement('img')
+            img.src = customWatermarkBase64
+            img.className = 'preview-image'
+            previewWrapper.appendChild(img)
+            
+            const fileUpload = panel.querySelector('.file-upload')
+            fileUpload.insertAdjacentElement('afterend', previewWrapper)
+          }
+          updatePreviewRatio()
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+
+    // 初始更新预览尺寸
+    updatePreviewRatio()
+  }
+
+  // 更新预览图片比例
+  function updatePreviewRatio() {
+    const widthInput = document.querySelector('#watermarkWidth')
+    const heightInput = document.querySelector('#watermarkHeight')
+    const widthUnit = widthInput.nextElementSibling.value
+    const heightUnit = heightInput.nextElementSibling.value
+    const previewWrapper = document.querySelector('.preview-wrapper')
+    const previewImage = document.querySelector('.preview-image')
+    
+    if (!previewWrapper) return
+
+    // 设置预览容器的最大尺寸限制
+    previewWrapper.style.maxWidth = '534px'
+    previewWrapper.style.maxHeight = '214px'
+
+    if (widthUnit === 'px' && heightUnit === 'px') {
+      // 如果都是像素单位，使用指定尺寸
+      const width = parseInt(widthInput.value) || watermarkWidth
+      const height = parseInt(heightInput.value) || watermarkHeight
+      
+      if (width <= 534 && height <= 214) {
+        // 如果尺寸在限制范围内，直接使用
+        previewWrapper.style.width = `${width}px`
+        previewWrapper.style.height = `${height}px`
+      } else {
+        // 超出限制时，等比例缩放
+        const ratio = Math.min(534 / width, 214 / height)
+        previewWrapper.style.width = `${width * ratio}px`
+        previewWrapper.style.height = `${height * ratio}px`
+      }
+      
+      previewWrapper.style.paddingBottom = '0'
+      previewImage.style.objectFit = 'fill'
+    } else {
+      // 如果有任一单位不是像素，使用图片实际比例
+      previewImage.style.objectFit = 'contain'
+      previewWrapper.style.width = '100%'
+      previewWrapper.style.height = '0'
+      previewWrapper.style.paddingBottom = '40%' // 保持 5:2 的宽高比
+    }
+  }
+
+  // 清理并更新样式
+  GM_addStyle(`
+    .settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+      z-index: 9998;
+    }
+
+    .settings-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      z-index: 9999;
+      width: 750px;
+      max-height: 90vh;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+
+    .settings-panel::-webkit-scrollbar {
+      display: none;
+    }
+
+    .settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .settings-header h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1d1d1f;
+      margin: 0;
+    }
+
+    .settings-notice {
+      display: flex;
+      align-items: flex-start;
+      background: #f5f5f7;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .notice-icon {
+      font-size: 20px;
+      color: #06c;
+      margin-right: 12px;
+    }
+
+    .notice-text {
+      font-size: 14px;
+      line-height: 1.4;
+      color: #1d1d1f;
+    }
+
+    .settings-section {
+      margin-bottom: 24px;
+    }
+
+    .settings-section h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1d1d1f;
+      margin: 0 0 5px 0;
+    }
+
+    .size-inputs {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .size-input-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .size-input-wrapper label {
+      font-size: 13px;
+      color: #86868b;
+      white-space: nowrap;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .input-unit-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 8px 50px 8px 12px;
+      border: 1px solid #d2d2d7;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1d1d1f;
+    }
+
+    .unit-select {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      color: #86868b;
+      cursor: pointer;
+      padding-right: 16px;
+    }
+
+    .size-separator {
+      flex-shrink: 0;
+      margin: 0 4px;
+      color: #86868b;
+    }
+
+    .method-options {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .method-radio {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .method-radio input[type="radio"] {
+      display: none;
+    }
+
+    .method-radio-content {
+      padding: 16px;
+      background: #f5f5f7;
+      border-radius: 12px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .method-radio input[type="radio"]:checked + .method-radio-content {
+      background: #e8f2ff;
+      border: 2px solid #06c;
+      padding: 14px;
+    }
+
+    .method-title {
+      display: block;
+      font-size: 15px;
+      font-weight: 500;
+      color: #1d1d1f;
+      margin-bottom: 4px;
+    }
+
+    .method-desc {
+      display: block;
+      font-size: 13px;
+      color: #86868b;
+    }
+
+    .preview-wrapper {
+      margin: 16px auto;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #d2d2d7;
+      width: 100%;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .preview-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .crop-mode .size-input-wrapper {
+      max-width: 300px;
+      margin: 0 auto;
+    }
+
+    .file-upload {
+      margin-bottom: 16px;
+    }
+
+    .file-upload-button {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #06c;
+      color: white;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .file-upload-button:hover {
+      background: #0055b3;
+    }
+
+    .file-upload input[type="file"] {
+      display: none;
+    }
+
+    .close-button {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: #f5f5f7;
+      border-radius: 50%;
+      font-size: 18px;
+      color: #86868b;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-button:hover {
+      background: #e5e5e7;
+      color: #1d1d1f;
+    }
+
+    .settings-footer {
+      margin-top: 24px;
+      text-align: right;
+    }
+
+    .save-button {
+      padding: 10px 24px;
+      background: #06c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .save-button:hover {
+      background: #0055b3;
+    }
+  `)
 
   const currentPath = window.location.href
 
@@ -103,84 +684,49 @@
    * @param {string} imageUrl - 需要处理的图片URL
    * @returns {Promise<string>} - 返回处理后的图片URL
    */
-  function removeWatermarkWithCanvas(imageUrl) {
+  async function removeWatermarkWithCanvas(imageUrl) {
     console.log('开始Canvas处理水印，原图URL:', imageUrl)
     return new Promise((resolve, reject) => {
       const img = new Image()
-      img.crossOrigin = 'anonymous' // 处理跨域问题
+      img.crossOrigin = 'anonymous'
 
-      img.onload = function () {
+      img.onload = async function () {
         console.log('图片加载成功，尺寸:', img.width, 'x', img.height)
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')
 
-        // 设置canvas尺寸与图片一致
-        canvas.width = img.width
-        canvas.height = img.height
+        // 根据不同方法处理水印
+        switch (currentMethod) {
+          case WATERMARK_REMOVAL_METHOD.CANVAS_COVER:
+            // 原有的 Canvas 覆盖方法
+            canvas.width = img.width
+            canvas.height = img.height
+            ctx.drawImage(img, 0, 0)
+            await handleCanvasCover(ctx, img)
+            break
 
-        // 绘制原图
-        ctx.drawImage(img, 0, 0)
+          case WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK:
+            // 使用自定义水印覆盖
+            canvas.width = img.width
+            canvas.height = img.height
+            ctx.drawImage(img, 0, 0)
+            await handleCustomWatermark(ctx, img)
+            break
 
-        // 计算水印区域（右下角）
-        // const watermarkWidth = img.width * 0.28 // 水印宽度约为图片宽度的30%
-        // const watermarkHeight = img.height * 0.1 // 水印高度约为图片高度的10%
-        const watermarkWidth = 200 // 水印宽度约为图片宽度的30%
-        const watermarkHeight = 80 // 水印高度约为图片高度的10%
-        const x = img.width - watermarkWidth
-        const y = img.height - watermarkHeight
-
-        console.log('处理水印区域:', {
-          x,
-          y,
-          width: watermarkWidth,
-          height: watermarkHeight
-        })
-
-        // 获取右下角最角落的颜色值（采样5x5像素区域）
-        const sampleSize = 5
-        let rSum = 0,
-          gSum = 0,
-          bSum = 0,
-          count = 0
-
-        for (let sx = x + watermarkWidth - sampleSize; sx < x + watermarkWidth; sx++) {
-          for (let sy = y + watermarkHeight - sampleSize; sy < y + watermarkHeight; sy++) {
-            const pixel = ctx.getImageData(sx, sy, 1, 1).data
-            rSum += pixel[0]
-            gSum += pixel[1]
-            bSum += pixel[2]
-            count++
-          }
+          case WATERMARK_REMOVAL_METHOD.CROP_BOTTOM:
+            // 裁剪底部方法
+            canvas.width = img.width
+            // 根据单位计算实际裁剪高度
+            if (heightUnit === '%') {
+                canvas.height = img.height * (1 - watermarkHeight / 100)
+            } else {
+                canvas.height = img.height - watermarkHeight
+            }
+            ctx.drawImage(img, 0, 0)
+            break
         }
 
-        // 计算平均颜色
-        const avgR = Math.round(rSum / count)
-        const avgG = Math.round(gSum / count)
-        const avgB = Math.round(bSum / count)
-
-        // 获取水印区域的图像数据
-        const imageData = ctx.getImageData(x, y, watermarkWidth, watermarkHeight)
-        const pixels = imageData.data
-
-        // 对水印区域进行处理
-        for (let i = 0; i < pixels.length; i += 4) {
-          // 使用采样的颜色值，并添加轻微的随机变化使效果更自然
-          pixels[i] = avgR + (Math.random() - 0.5) * 10 // R
-          pixels[i + 1] = avgG + (Math.random() - 0.5) * 10 // G
-          pixels[i + 2] = avgB + (Math.random() - 0.5) * 10 // B
-          pixels[i + 3] = 245 // Alpha (透明度)
-        }
-
-        // 将处理后的图像数据放回画布
-        ctx.putImageData(imageData, x, y)
-
-        // 添加高斯模糊效果
-        ctx.filter = 'blur(2px)'
-        ctx.fillStyle = `rgba(${avgR}, ${avgG}, ${avgB}, 0.3)`
-        ctx.fillRect(x, y, watermarkWidth, watermarkHeight)
-        ctx.filter = 'none' // 重置滤镜
-
-        // 转换为blob
+        // 转换为blob并返回
         canvas.toBlob(
           (blob) => {
             if (blob) {
@@ -202,6 +748,104 @@
         reject(new Error('Image loading failed'))
       }
       img.src = imageUrl
+    })
+  }
+
+  // Canvas覆盖方法
+  async function handleCanvasCover(ctx, img) {
+    // 计算实际水印尺寸
+    let actualWidth, actualHeight
+
+    if (widthUnit === '%') {
+      actualWidth = img.width * (watermarkWidth / 100)
+    } else {
+      actualWidth = watermarkWidth
+    }
+
+    if (heightUnit === '%') {
+      actualHeight = img.height * (watermarkHeight / 100)
+    } else {
+      actualHeight = watermarkHeight
+    }
+
+    const x = img.width - actualWidth
+    const y = img.height - actualHeight
+
+    // 获取右下角颜色采样
+    const sampleSize = 5
+    let rSum = 0, gSum = 0, bSum = 0, count = 0
+
+    for(let sx = x + actualWidth - sampleSize; sx < x + actualWidth; sx++) {
+      for(let sy = y + actualHeight - sampleSize; sy < y + actualHeight; sy++) {
+        const pixel = ctx.getImageData(sx, sy, 1, 1).data
+        rSum += pixel[0]
+        gSum += pixel[1]
+        bSum += pixel[2]
+        count++
+      }
+    }
+
+    const avgR = Math.round(rSum / count)
+    const avgG = Math.round(gSum / count)
+    const avgB = Math.round(bSum / count)
+
+    // 处理水印区域
+    const imageData = ctx.getImageData(x, y, actualWidth, actualHeight)
+    const pixels = imageData.data
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      pixels[i] = avgR + (Math.random() - 0.5) * 10
+      pixels[i + 1] = avgG + (Math.random() - 0.5) * 10
+      pixels[i + 2] = avgB + (Math.random() - 0.5) * 10
+      pixels[i + 3] = 245
+    }
+
+    ctx.putImageData(imageData, x, y)
+    ctx.filter = 'blur(2px)'
+    ctx.fillStyle = `rgba(${avgR}, ${avgG}, ${avgB}, 0.3)`
+    ctx.fillRect(x, y, actualWidth, actualHeight)
+    ctx.filter = 'none'
+  }
+
+  // 自定义水印覆盖方法
+  async function handleCustomWatermark(ctx, img) {
+    if (!customWatermarkBase64) {
+      throw new Error('未设置自定义水印图片')
+    }
+
+    return new Promise((resolve, reject) => {
+      const watermarkImg = new Image()
+      watermarkImg.crossOrigin = 'anonymous'
+      
+      watermarkImg.onload = () => {
+        // 计算实际水印尺寸
+        let actualWidth, actualHeight
+
+        if (widthUnit === '%') {
+          actualWidth = img.width * (watermarkWidth / 100)
+        } else {
+          actualWidth = watermarkWidth
+        }
+
+        if (heightUnit === '%') {
+          actualHeight = img.height * (watermarkHeight / 100)
+        } else {
+          actualHeight = watermarkHeight
+        }
+
+        const x = img.width - actualWidth
+        const y = img.height - actualHeight
+
+        // 绘制自定义水印
+        ctx.drawImage(watermarkImg, x, y, actualWidth, actualHeight)
+        resolve()
+      }
+
+      watermarkImg.onerror = () => {
+        reject(new Error('自定义水印图片加载失败'))
+      }
+
+      watermarkImg.src = customWatermarkBase64
     })
   }
 
@@ -246,20 +890,14 @@
        * 下载图片的主函数
        * @param {string} url - 图片URL
        * @param {boolean} isRetry - 是否为重试下载
-       * @param {boolean} isOriginal - 是否下载原图（带水印）
+       * @param {boolean} isOriginal - 是否载原图（带水印）
        */
       function downloadImage(url, isRetry = false, isOriginal = false) {
-        // 根据不同的下载方式设置不同的文件名前缀
-        let prefix
-        if (isOriginal) {
-          prefix = '未去水印'
-        } else if (isRetry) {
-          prefix = '去水印二'
-        } else {
-          prefix = '去水印一'
-        }
+        let method = isOriginal ? 'original' : 
+                     isRetry ? currentMethod : 
+                     'direct'
 
-        const filename = `${prefix}_${bookName.trim()}-${isbn.trim()}-${index + 1}.${extension || 'jpg'}`
+        const filename = getImageFileName(index, bookName, isbn, extension, method)
 
         console.log('开始下载图片:', {
           url,
@@ -340,8 +978,8 @@
       downloadButton.style.lineHeight = '20px'
       downloadButton.innerText =
         `📢总计：${images.length}\n` +
-        `✨去水印一：${directSuccessCount}\n` +
-        `🎨去水印二：${canvasSuccessCount}\n` +
+        `✨完美去水印：${directSuccessCount}\n` +
+        `🎨备选去水印：${canvasSuccessCount}\n` +
         `🔄未去水印：${originalImageCount}\n` +
         `😭下载失败：${failCount}\n`
 
@@ -540,17 +1178,17 @@
     updateLogPopup.classList.add('update-log-popup')
     updateLogPopup.innerHTML = `
               <div class="update-log-header">
-                  <p><a target="_blank" href="https://greasyfork.org/zh-CN/scripts/467062-%E5%AD%94%E5%A4%AB%E5%AD%90%E6%97%A7%E4%B9%A6%E7%BD%91%E5%9B%BE%E7%89%87%E4%B8%8B%E8%BD%BD-%E8%87%AA%E5%8A%A8%E5%8E%BB%E6%B0%B4%E5%8D%B0-%E8%B7%AF%E4%BA%BA%E7%94%B2%E4%B9%99%E4%B8%99">孔夫子旧书网图片下载（自动去水印）更新日志</a></p>
+                  <p><a target="_blank" href="https://greasyfork.org/zh-CN/scripts/467062">孔夫子旧书网图片下载（自动去水印）更新日志</a></p>
                   <div style="font-size: 12px; color: #666; text-align: center;">每次升级后此窗口可能会展示多次</div>
               </div>
               <div class="update-log-body">
                   <ul>
                   <li>
-                          <div style="display: flex; align-items: center; justify-content: center;">🎄圣诞快乐🎄</div>
-                          <p style="font-weight: bold;">[2024-12-25] v4.0</p>
+                          <div style="display: flex; align-items: center; justify-content: center;">🧨提前祝大家新年快乐🧨</div>
+                          <p style="font-weight: bold;">[2024-12-27] v4.0</p>
                           <ul>
-                              <li style="color: red;">1. 新增 Canvas 去水印，去水印成功率 99.9999999% 以上</li>
-                              <li style="color: red;">2. 修改按钮和消息展示样式。</li>
+                              <li style="color: red;">1. 新增三种备用去水印方式，分别是：裁剪底部水印区域、裁剪底部水印区域、裁剪底部水印区域；<br><img src="https://greasyfork.s3.us-east-2.amazonaws.com/vb9gy3e8gy70l2r26vw3lgo5bfix" alt="设置菜单说明" width="90%"></li>
+                              <li>2. 修改按钮和弹窗样式。</li>
                           </ul>
                       </li>
                       <li>
@@ -810,7 +1448,9 @@
       overflow-y: auto;
       max-width: 800px;
       width: 90%;
+      scrollbar-width: none;
   }
+      
   .update-log-header p {
       margin: 5px 0;
       font-size: 18px;
@@ -1018,4 +1658,107 @@
       }
     }
   `)
+
+  // 修改下载图片的文件名生成逻辑
+  function getImageFileName(index, bookName, isbn, extension, method) {
+    let prefix
+    switch (method) {
+      case 'direct':
+        prefix = '完美去水印'
+        break
+      case WATERMARK_REMOVAL_METHOD.CANVAS_COVER:
+        prefix = '纯色覆盖'
+        break
+      case WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK:
+        prefix = '自定义水印'
+        break
+      case WATERMARK_REMOVAL_METHOD.CROP_BOTTOM:
+        prefix = '裁剪底部'
+        break
+      default:
+        prefix = '未知方式'
+    }
+    return `${prefix}_${bookName.trim()}-${isbn.trim()}-${index + 1}.${extension || 'jpg'}`
+  }
+
+  // 修改下载函数中的文件名生成部分
+  function downloadImage(url, isRetry = false, isOriginal = false) {
+    let method = isOriginal ? 'original' : 
+                 isRetry ? currentMethod : 
+                 'direct'
+
+    const filename = getImageFileName(index, bookName, isbn, extension, method)
+
+    console.log('开始下载图片:', {
+      url,
+      filename,
+      isRetry,
+      isOriginal,
+      currentProgress: `${directSuccessCount + canvasSuccessCount + originalImageCount + failCount + 1}/${images.length}`
+    })
+
+    GM_download({
+      url,
+      name: filename,
+      onprogress: (event) => {
+        downloadButton.innerText = `Downloading...(${index + 1}/${images.length})`
+      },
+      onload: () => {
+        if (isOriginal) {
+          originalImageCount++
+          console.log(`原图下载成功 - 总进度: ${directSuccessCount + canvasSuccessCount + originalImageCount + failCount}/${images.length}`)
+        } else if (isRetry) {
+          canvasSuccessCount++
+          console.log(`Canvas处理图片下载成功 - 总进度: ${directSuccessCount + canvasSuccessCount + originalImageCount + failCount}/${images.length}`)
+        } else {
+          directSuccessCount++
+          console.log(`直接去水印下载成功 - 总进度: ${directSuccessCount + canvasSuccessCount + originalImageCount + failCount}/${images.length}`)
+        }
+
+        // 检查是否所有图片都处理完成
+        if (directSuccessCount + canvasSuccessCount + originalImageCount + failCount === images.length) {
+          console.log('所有图片处理完成:', {
+            直接去水印成功: directSuccessCount,
+            Canvas处理成功: canvasSuccessCount,
+            原图下载: originalImageCount,
+            失败: failCount
+          })
+          updateDownloadButton()
+          updateDownloadCount(downloadCount + directSuccessCount + canvasSuccessCount + originalImageCount)
+
+          // 检查是否需要显示捐赠弹窗
+          if ((downloadCount % 100 === 0 && downloadCount !== 0 && !donationPopupShown) || (downloadCount > 1000 && !donationPopupShown)) {
+            showDonationPopup()
+          }
+        }
+      },
+      onerror: async (error) => {
+        // 第一次下载失败，尝试Canvas处理
+        if (!isRetry && !isOriginal) {
+          console.log('无水印链接下载失败，尝试Canvas处理...', error)
+          try {
+            const processedImageUrl = await removeWatermarkWithCanvas(imageUrl)
+            downloadImage(processedImageUrl, true, false)
+          } catch (canvasError) {
+            console.log('Canvas处理失败，降级到原图下载:', canvasError)
+            downloadImage(imageUrl, true, true)
+          }
+        }
+        // Canvas处理后下载失败，尝试原图
+        else if (isRetry && !isOriginal) {
+          console.log('Canvas处理图片下载失败，降级到原图下载:', error)
+          downloadImage(imageUrl, true, true)
+        }
+        // 所有尝试都失败
+        else {
+          failCount++
+          console.error('图片下载完全失败:', error)
+          if (directSuccessCount + canvasSuccessCount + originalImageCount + failCount === images.length) {
+            updateDownloadButton()
+          }
+        }
+      }
+    })
+  }
+
 })()
