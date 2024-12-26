@@ -87,7 +87,7 @@
           <div class="notice-icon">ⓘ</div>
           <div class="notice-text">
             系统会优先使用完美去水印方式，
-            仅在该方式失效时（目前失效率很高）才会使用以下备选方案
+            仅在该方式失效时（目前失效率很高）才会使用以下备选方案。
           </div>
         </div>
 
@@ -122,9 +122,9 @@
 
         <div class="settings-section">
           <h4>水印区域尺寸</h4>
-          <div class="method-desc">建议宽:高=5:2，大部分图片使用 200像素 x 80像素可以覆盖大部分情况，裁剪底部时，一般使用 80 像素可以覆盖大部分情况</div>
+          <div class="method-desc">建议宽:高=5:2，大部分图片使用 200像素 x 80像素可以覆盖大部分情况，裁剪底部时，一般使用 80 像素可以覆盖大部分情况。</div>
           <div class="size-inputs ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'crop-mode' : ''}">
-            <div class="size-input-wrapper" style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'none' : 'block'}">
+            <div class="size-input-wrapper" style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'none' : 'inline'}">
               <label>宽度：</label>
               <div class="input-unit-wrapper">
                 <input type="text" id="watermarkWidth" value="${watermarkWidth}" 
@@ -154,8 +154,7 @@
              style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK ? 'block' : 'none'}">
           <h4>自定义水印图片</h4>
           <span class="method-desc">
-            建议宽:高=5:2，和水印区域尺寸比例不一致时，会自动缩放拉伸<br>
-            只有水印区域尺寸都是像素时，下面的预览比例才是准确的
+            建议宽:高=5:2，和水印区域尺寸比例不一致时，会自动缩放拉伸。只有水印区域尺寸都是像素时，下面的预览比例才是准确的。
           </span>
           <div class="file-upload">
             <label class="file-upload-button" for="watermarkFile">
@@ -206,7 +205,7 @@
           panel.querySelector('.size-separator').style.display = 'none'
         } else {
           sizeInputs.classList.remove('crop-mode')
-          panel.querySelector('#watermarkWidth').parentElement.parentElement.style.display = 'block'
+          panel.querySelector('#watermarkWidth').parentElement.parentElement.style.display = 'flex'
           panel.querySelector('.size-separator').style.display = 'inline'
         }
       })
@@ -354,7 +353,7 @@
       border-radius: 16px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       z-index: 9999;
-      width: 750px;
+      width: 800px;
       max-height: 90vh;
       overflow-y: auto;
       scrollbar-width: none;
