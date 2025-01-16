@@ -135,8 +135,8 @@
                 </select>
               </div>
             </div>
-            <span class="size-separator" style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'none' : 'flex'}">×</span>
-            <div class="size-input-wrapper" style="display: flex;">
+            <span class="size-separator" style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'none' : 'inline'}">×</span>
+            <div class="size-input-wrapper">
               <label>高度：</label>
               <div class="input-unit-wrapper">
                 <input type="text" id="watermarkHeight" value="${watermarkHeight}"
@@ -436,28 +436,34 @@
       align-items: center;
       gap: 12px;
       margin-top: 12px;
+      justify-content: center;
     }
 
     .size-input-wrapper {
-      position: relative;
-      flex: 1;
       display: flex;
       align-items: center;
-      min-width: 0;
+      gap: 8px;
+      flex: 0 1 auto;
     }
 
     .size-input-wrapper label {
-      font-size: 13px;
-      color: #86868b;
       white-space: nowrap;
-      margin-right: 8px;
-      flex-shrink: 0;
+      color: #86868b;
+      font-size: 13px;
     }
 
     .input-unit-wrapper {
       position: relative;
-      flex: 1;
-      min-width: 0;
+      display: flex;
+      align-items: center;
+      min-width: 120px;
+    }
+
+    .size-separator {
+      margin: 0 8px;
+      color: #86868b;
+      font-size: 14px;
+      line-height: 1;
     }
 
     input[type="text"] {
@@ -480,12 +486,6 @@
       color: #86868b;
       cursor: pointer;
       padding-right: 16px;
-    }
-
-    .size-separator {
-      flex-shrink: 0;
-      margin: 0 4px;
-      color: #86868b;
     }
 
     .method-options {
@@ -1327,7 +1327,7 @@
                           <div style="display: flex; align-items: center; justify-content: center;">🧨提前祝大家新年快乐🧨</div>
                           <p style="font-weight: bold;">[2024-12-27] v4.0</p>
                           <ul>
-                              <li style="color: red;">1. 新增三种备用去水印方式，分别是：裁剪底部水印区域、裁剪底部水印区域、裁剪底部水印区域；<br><img src="https://greasyfork.s3.us-east-2.amazonaws.com/vb9gy3e8gy70l2r26vw3lgo5bfix" alt="设置菜单说明" width="90%"></li>
+                              <li style="color: red;">1. 新增三种备用去水印方式，分别是：裁剪底部水印区域、裁剪底部水印区域、裁剪底部水印区域；<br><img src="https://greasyfork.s3.us-east-2.amazonaws.com/vb9gy3e8gy70l2r26vw3lgo5bfix" alt="设置菜单说明" style="width: 90%;"></li>
                               <li>2. 修改按钮和弹窗样式。</li>
                           </ul>
                       </li>
