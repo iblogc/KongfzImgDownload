@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         beta-孔夫子旧书网图片下载（自动去水印）-路人甲乙丙
 // @description  何以生财，唯有实战。（问题反馈联系微信Byte4Me）
-// @version      4.1
+// @version      4.2
 // @author       路人甲乙丙
 // @namespace    iblogc
 // @match        *://search.kongfz.com/*
@@ -31,10 +31,6 @@
     // 获取用户配置
     let currentMethod = GM_getValue('watermarkRemovalMethod', WATERMARK_REMOVAL_METHOD.CANVAS_COVER)
     let customWatermarkBase64 = GM_getValue('customWatermarkBase64', '')
-    let watermarkWidth = GM_getValue('watermarkWidth', 200)
-    let watermarkHeight = GM_getValue('watermarkHeight', 80)
-    let widthUnit = GM_getValue('widthUnit', 'px')
-    let heightUnit = GM_getValue('heightUnit', 'px')
     let cropRatio = GM_getValue('cropRatio', 0.9)
 
     // 注册菜单命令
@@ -65,7 +61,7 @@
             case WATERMARK_REMOVAL_METHOD.CANVAS_COVER:
                 return '纯色覆盖'
             case WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK:
-                return '自定义水印覆盖'
+                return '自定义水印'
             case WATERMARK_REMOVAL_METHOD.CROP_BOTTOM:
                 return '裁剪底部'
             default:
@@ -98,7 +94,7 @@
                      ${currentMethod === WATERMARK_REMOVAL_METHOD.CANVAS_COVER ? 'checked' : ''}>
               <div class="method-radio-content">
                 <span class="method-title">纯色覆盖</span>
-                <span class="method-desc">采集右下角颜色</span>
+                <span class="method-desc">采集图片右下角的颜色，用相近的颜色覆盖水印区域，适合底色均匀的图片。</span>
               </div>
             </label>
             <label class="method-radio">
@@ -106,7 +102,7 @@
                      ${currentMethod === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK ? 'checked' : ''}>
               <div class="method-radio-content">
                 <span class="method-title">自定义水印</span>
-                <span class="method-desc">使用自定义图片</span>
+                <span class="method-desc">使用自定义图片覆盖水印区域，可以上传自己设计的水印或纯色图片。</span>
               </div>
             </label>
             <label class="method-radio">
@@ -114,39 +110,9 @@
                      ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'checked' : ''}>
               <div class="method-radio-content">
                 <span class="method-title">裁剪底部</span>
-                <span class="method-desc">裁剪底部水印区域</span>
+                <span class="method-desc">直接裁剪掉图片底部的水印区域，适合水印区域内容不重要的图片。</span>
               </div>
             </label>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h4>水印区域尺寸</h4>
-          <div class="method-desc">建议宽:高=5:2，大部分图片使用 200像素 x 80像素可以覆盖大部分情况，裁剪底部时，一般使用 80 像素可以覆盖大部分情况。</div>
-          <div class="size-inputs ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'crop-mode' : ''}">
-            <div class="size-input-wrapper" style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'none' : 'flex'}">
-              <label>宽度：</label>
-              <div class="input-unit-wrapper">
-                <input type="text" id="watermarkWidth" value="${watermarkWidth}" 
-                       placeholder="宽度">
-                <select class="unit-select">
-                  <option value="px">像素</option>
-                  <option value="%">百分比</option>
-                </select>
-              </div>
-            </div>
-            <span class="size-separator" style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM ? 'none' : 'inline'}">×</span>
-            <div class="size-input-wrapper">
-              <label>高度：</label>
-              <div class="input-unit-wrapper">
-                <input type="text" id="watermarkHeight" value="${watermarkHeight}"
-                       placeholder="高度">
-                <select class="unit-select">
-                  <option value="px">像素</option>
-                  <option value="%">百分比</option>
-                </select>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -154,16 +120,17 @@
              style="display: ${currentMethod === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK ? 'block' : 'none'}">
           <h4>自定义水印图片</h4>
           <span class="method-desc">
-            建议宽:高=5:2，和水印区域尺寸比例不一致时，会自动缩放拉伸。只有水印区域尺寸都是像素时，下面的预览比例才是准确的。
+            脚本会自动缩放水印图片，以适应水印区域，并且保持水印图片比例，宽:高=5:2的图片刚好能覆盖水印区域。
+            当然你也可以上传其它比例图片，不管怎样的水印图片，脚本都会自动缩放以覆盖水印区域。
           </span>
           <div class="file-upload">
             <label class="file-upload-button" for="watermarkFile">
-              选择图片
+              选择水印图片
             </label>
             <input type="file" id="watermarkFile" accept="image/*">
           </div>
           ${customWatermarkBase64 ?
-                `<div class="preview-wrapper">
+            `<div class="preview-wrapper">
                <img src="${customWatermarkBase64}" class="preview-image">
              </div>` : ''}
         </div>
@@ -200,60 +167,16 @@
                 const customSection = panel.querySelector('#customWatermarkSection')
                 customSection.style.display =
                     input.value === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK ? 'block' : 'none'
-
-                // 更新预览图片尺寸
-                if (input.value === WATERMARK_REMOVAL_METHOD.CUSTOM_WATERMARK) {
-                    updatePreviewRatio()
-                }
-
-                // 更新尺寸输入显示
-                const sizeInputs = panel.querySelector('.size-inputs')
-                if (input.value === WATERMARK_REMOVAL_METHOD.CROP_BOTTOM) {
-                    sizeInputs.classList.add('crop-mode')
-                    panel.querySelector('#watermarkWidth').parentElement.parentElement.style.display = 'none'
-                    panel.querySelector('.size-separator').style.display = 'none'
-                } else {
-                    sizeInputs.classList.remove('crop-mode')
-                    panel.querySelector('#watermarkWidth').parentElement.parentElement.style.display = 'flex'
-                    panel.querySelector('.size-separator').style.display = 'inline'
-                }
             })
         })
 
-        // 监听尺寸和单位变化
-        const sizeInputs = panel.querySelectorAll('#watermarkWidth, #watermarkHeight')
-        const unitSelects = panel.querySelectorAll('.unit-select')
-
-        const updateHandler = () => updatePreviewRatio()
-
-        sizeInputs.forEach(input => {
-            input.addEventListener('input', updateHandler)
-            input.addEventListener('change', updateHandler)
-        })
-
-        unitSelects.forEach(select => {
-            select.addEventListener('change', updateHandler)
-        })
-
-        // 绑定保存事件
+        // 修改绑定保存事件
         panel.querySelector('#saveSettings').onclick = () => {
             const selectedMethod = panel.querySelector('input[name="watermarkMethod"]:checked').value
-            const width = parseInt(panel.querySelector('#watermarkWidth').value) || watermarkWidth
-            const height = parseInt(panel.querySelector('#watermarkHeight').value) || watermarkHeight
-            const newWidthUnit = panel.querySelector('#watermarkWidth').nextElementSibling.value
-            const newHeightUnit = panel.querySelector('#watermarkHeight').nextElementSibling.value
 
             currentMethod = selectedMethod
-            watermarkWidth = width
-            watermarkHeight = height
-            widthUnit = newWidthUnit
-            heightUnit = newHeightUnit
-
+            
             GM_setValue('watermarkRemovalMethod', selectedMethod)
-            GM_setValue('watermarkWidth', width)
-            GM_setValue('watermarkHeight', height)
-            GM_setValue('widthUnit', newWidthUnit)
-            GM_setValue('heightUnit', newHeightUnit)
             GM_setValue('customWatermarkBase64', customWatermarkBase64)
 
             alert('设置已保存')
@@ -287,14 +210,10 @@
                         const fileUpload = panel.querySelector('.file-upload')
                         fileUpload.insertAdjacentElement('afterend', previewWrapper)
                     }
-                    updatePreviewRatio()
                 }
                 reader.readAsDataURL(file)
             }
         }
-
-        // 初始更新预览尺寸
-        updatePreviewRatio()
 
         // 添加开发服务链接的点击事件
         panel.querySelector('#devService').addEventListener('click', (event) => {
@@ -307,48 +226,6 @@
             event.preventDefault()
             showDonationPopup()
         })
-    }
-
-    // 更新预览图片比例
-    function updatePreviewRatio() {
-        const widthInput = document.querySelector('#watermarkWidth')
-        const heightInput = document.querySelector('#watermarkHeight')
-        const widthUnit = widthInput.nextElementSibling.value
-        const heightUnit = heightInput.nextElementSibling.value
-        const previewWrapper = document.querySelector('.preview-wrapper')
-        const previewImage = document.querySelector('.preview-image')
-
-        if (!previewWrapper) return
-
-        // 设置预览容器的最大尺寸限制
-        previewWrapper.style.maxWidth = '534px'
-        previewWrapper.style.maxHeight = '214px'
-
-        if (widthUnit === 'px' && heightUnit === 'px') {
-            // 如果都是像素单位，使用指定尺寸
-            const width = parseInt(widthInput.value) || watermarkWidth
-            const height = parseInt(heightInput.value) || watermarkHeight
-
-            if (width <= 534 && height <= 214) {
-                // 如果尺寸在限制范围内，直接使用
-                previewWrapper.style.width = `${width}px`
-                previewWrapper.style.height = `${height}px`
-            } else {
-                // 超出限制时，等比例缩放
-                const ratio = Math.min(534 / width, 214 / height)
-                previewWrapper.style.width = `${width * ratio}px`
-                previewWrapper.style.height = `${height * ratio}px`
-            }
-
-            previewWrapper.style.paddingBottom = '0'
-            previewImage.style.objectFit = 'fill'
-        } else {
-            // 如果有任一单位不是像素，使用图片实际比例
-            previewImage.style.objectFit = 'contain'
-            previewWrapper.style.width = '100%'
-            previewWrapper.style.height = '0'
-            previewWrapper.style.paddingBottom = '40%' // 保持 5:2 的宽高比
-        }
     }
 
     // 清理并更新样式
@@ -505,7 +382,8 @@
 
     .method-radio-content {
       padding: 16px;
-      background: #f5f5f7;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
       border-radius: 12px;
       text-align: center;
       transition: all 0.2s;
@@ -513,22 +391,26 @@
 
     .method-radio input[type="radio"]:checked + .method-radio-content {
       background: #e8f2ff;
-      border: 2px solid #06c;
-      padding: 14px;
+      border: 1px solid #06c;
     }
 
     .method-title {
       display: block;
       font-size: 15px;
-      font-weight: 500;
+      font-weight: 600;
       color: #1d1d1f;
-      margin-bottom: 4px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
     }
 
     .method-desc {
       display: block;
       font-size: 13px;
-      color: #86868b;
+      line-height: 1.5;
+      color: #666;
+      text-align: left;
+      padding: 0 4px;
     }
 
     .preview-wrapper {
@@ -536,18 +418,20 @@
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid #d2d2d7;
-      width: 100%;
-      position: relative;
-      transition: all 0.3s ease;
+      max-width: 200px !important;  
+      max-height: 80px !important;  
+      width: 200px;
+      height: 80px;
+      background: #f5f5f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .preview-image {
-      position: absolute;
-      top: 0;
-      left: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: contain; // 保持图片比例,确保完整显示
     }
 
     .crop-mode .size-input-wrapper {
@@ -557,6 +441,7 @@
 
     .file-upload {
       margin-bottom: 16px;
+      text-align: center;
     }
 
     .file-upload-button {
@@ -731,7 +616,7 @@
 
     const STORAGE_KEY = 'downloadCount'
     const DONATION_POPUP_SHOWN_KEY = 'donationPopupShown'
-    const FIRST_EXECUTION_KEY = 'firstExecutionv40'
+    const FIRST_EXECUTION_KEY = 'firstExecutionv42'
     let downloadCount = parseInt(localStorage.getItem(STORAGE_KEY)) || 0
     let donationPopupShown = localStorage.getItem(DONATION_POPUP_SHOWN_KEY) === 'true'
     let firstExecution = localStorage.getItem(FIRST_EXECUTION_KEY) === 'true'
@@ -844,12 +729,8 @@
                     case WATERMARK_REMOVAL_METHOD.CROP_BOTTOM:
                         // 裁剪底部方法
                         canvas.width = img.width
-                        // 根据单位计算实际裁剪高度
-                        if (heightUnit === '%') {
-                            canvas.height = img.height * (1 - watermarkHeight / 100)
-                        } else {
-                            canvas.height = img.height - watermarkHeight
-                        }
+                        // 根据图片宽度计算裁剪高度
+                        canvas.height = img.height - (img.width / 10)
                         ctx.drawImage(img, 0, 0)
                         break
                 }
@@ -881,20 +762,9 @@
 
     // Canvas覆盖方法
     async function handleCanvasCover(ctx, img) {
-        // 计算实际水印尺寸
-        let actualWidth, actualHeight
-
-        if (widthUnit === '%') {
-            actualWidth = img.width * (watermarkWidth / 100)
-        } else {
-            actualWidth = watermarkWidth
-        }
-
-        if (heightUnit === '%') {
-            actualHeight = img.height * (watermarkHeight / 100)
-        } else {
-            actualHeight = watermarkHeight
-        }
+        // 根据图片实际宽度计算水印尺寸
+        const actualWidth = img.width / 4
+        const actualHeight = img.width / 10
 
         const x = img.width - actualWidth
         const y = img.height - actualHeight
@@ -935,7 +805,7 @@
         ctx.filter = 'none'
     }
 
-    // 自定义水印覆盖方法
+    // 修改自定义水印覆盖方法
     async function handleCustomWatermark(ctx, img) {
         if (!customWatermarkBase64) {
             throw new Error('未设置自定义水印图片')
@@ -946,26 +816,34 @@
             watermarkImg.crossOrigin = 'anonymous'
 
             watermarkImg.onload = () => {
-                // 计算实际水印尺寸
-                let actualWidth, actualHeight
+                // 计算目标区域尺寸
+                const targetWidth = img.width / 4
+                const targetHeight = img.width / 10
 
-                if (widthUnit === '%') {
-                    actualWidth = img.width * (watermarkWidth / 100)
+                // 计算水印图片的宽高比
+                const watermarkRatio = watermarkImg.width / watermarkImg.height
+                // 计算目标区域的宽高比
+                const targetRatio = targetWidth / targetHeight
+
+                // 计算实际绘制尺寸和位置
+                let drawWidth, drawHeight, drawX, drawY
+
+                if (watermarkRatio > targetRatio) {
+                    // 如果水印图片比目标区域更宽，则以高度为基准
+                    drawHeight = targetHeight
+                    drawWidth = drawHeight * watermarkRatio
+                    drawY = img.height - targetHeight
+                    drawX = img.width - drawWidth + (drawWidth - targetWidth) / 2 // 水平居中
                 } else {
-                    actualWidth = watermarkWidth
+                    // 如果水印图片比目标区域更高，则以宽度为基准
+                    drawWidth = targetWidth
+                    drawHeight = drawWidth / watermarkRatio
+                    drawX = img.width - targetWidth
+                    drawY = img.height - drawHeight + (drawHeight - targetHeight) / 2 // 垂直居中
                 }
-
-                if (heightUnit === '%') {
-                    actualHeight = img.height * (watermarkHeight / 100)
-                } else {
-                    actualHeight = watermarkHeight
-                }
-
-                const x = img.width - actualWidth
-                const y = img.height - actualHeight
 
                 // 绘制自定义水印
-                ctx.drawImage(watermarkImg, x, y, actualWidth, actualHeight)
+                ctx.drawImage(watermarkImg, drawX, drawY, drawWidth, drawHeight)
                 resolve()
             }
 
@@ -1323,14 +1201,20 @@
               </div>
               <div class="update-log-body">
                   <ul>
-                  <li>
-                          <div style="display: flex; align-items: center; justify-content: center;">🧨提前祝大家新年快乐🧨</div>
-                          <p style="font-weight: bold;">[2024-12-27] v4.0</p>
-                          <ul>
-                              <li style="color: red;">1. 新增三种备用去水印方式，分别是：裁剪底部水印区域、裁剪底部水印区域、裁剪底部水印区域；<br><img src="https://greasyfork.s3.us-east-2.amazonaws.com/vb9gy3e8gy70l2r26vw3lgo5bfix" alt="设置菜单说明" style="width: 90%;"></li>
-                              <li>2. 修改按钮和弹窗样式。</li>
-                          </ul>
-                      </li>
+                    <li>
+                      <div style="display: flex; align-items: center; justify-content: center;">🧨提前祝大家新年快乐🧨</div>
+                      <p style="font-weight: bold;">[2025-01-22] v4.2</p>
+                      <ul>
+                          <li style="color: red;">自动根据要下载的图片尺寸计算水印区域，不再需要手动设置</li>
+                      </ul>
+                    </li>
+                    <li>
+                      <p style="font-weight: bold;">[2024-12-27] v4.0</p>
+                      <ul>
+                          <li style="color: red;">1. 新增三种备用去水印方式，分别是：裁剪底部水印区域、裁剪底部水印区域、裁剪底部水印区域；<br><img src="https://greasyfork.s3.us-east-2.amazonaws.com/vb9gy3e8gy70l2r26vw3lgo5bfix" alt="设置菜单说明" style="width: 90%;"></li>
+                          <li>2. 修改按钮和弹窗样式。</li>
+                      </ul>
+                    </li>
                   </ul>
                   <p style="text-align: center; margin-top: 10px;">
                       <a href="#" id="donation" style="color: #007bff; text-decoration: none;">
@@ -1981,7 +1865,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
     }
 
     .close-button:hover {
